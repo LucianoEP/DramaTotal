@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador Drama Total</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: fan-made reality show, loud and funny but easy to read like an episode recap
+   IDEA: the camp itself, a wooden sign over a forest clearing; each part of an episode is its own page, like the show's segments
+   PICTURE: character portraits everywhere, a tiny totem on whoever holds an advantage
+   COLOUR and TYPE: forest green field, sign yellow accent, wood brown; Luckiest Guy + Nunito
+   LAYOUT: sign header + page tabs; setup as a 3-step wizard; game pages: episode, cast, alliances, relationships, votes */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef3ea,#0e1a12);--card:light-dark(#ffffff,#16261b);--ink:light-dark(#18231b,#e8efe6);--mute:light-dark(#5b6b5f,#9fb2a3);
+--line:light-dark(#d5e0d2,#2a3d2f);--forest:#21482f;--forest2:#2c5e3d;--sign:#f6c026;--wood:#7a4b22;--danger:light-dark(#b83232,#ff7b7b);--you:light-dark(#fff6d6,#3a3210);--head:light-dark(#2c5e3d,#f6c026);--woodt:light-dark(#7a4b22,#d9a46b)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Nunito,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Luckiest Guy",Impact,sans-serif;font-weight:400;letter-spacing:.5px;line-height:1.05;margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sign);outline-offset:2px}
+.top{background:var(--forest);color:#fff;padding:16px max(4vw,14px) 0;border-bottom:6px solid var(--wood)}
+.topin{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.sign{background:linear-gradient(#8f5a2a,#6b3f1b);border:3px solid #4a2a10;border-radius:10px;padding:8px 16px 6px;box-shadow:0 6px 0 #3a210c, inset 0 2px 0 #b07a44;transform:rotate(-1.5deg);display:flex;gap:12px;align-items:center}
+.sign img{width:46px;height:46px;border-radius:50%;border:2px solid #3a210c}
+.sign h1{color:var(--sign);font-size:clamp(24px,4vw,40px);text-shadow:2px 2px 0 #3a210c}
+.sign small{display:block;color:#f5e2c4;font-size:13px;margin-top:2px}
+.topbtns{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{max-width:1240px;margin:14px auto 0;display:flex;gap:4px;overflow-x:auto}
+.tab{flex:none;min-height:44px;padding:8px 16px;border:0;border-radius:10px 10px 0 0;background:#ffffff1a;color:#fff;font-weight:800}
+.tab[aria-current=true]{background:var(--bg);color:var(--ink)}
+.tab:disabled{opacity:.45;cursor:default}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:8px 16px;border-radius:10px;border:2px solid var(--line);background:var(--card);font-weight:800}
+.btn.go{background:var(--sign);border-color:#c99a0c;color:#2a1d00;box-shadow:0 4px 0 #b3870a}
+.btn.go:active{transform:translateY(2px);box-shadow:0 2px 0 #b3870a}
+.btn.ghost{background:transparent;color:#fff;border-color:#ffffff66}
+.wrap{max-width:1240px;margin:0 auto;padding:clamp(16px,3vw,32px) max(4vw,14px)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card h2,.ph2{font-size:26px;color:var(--head);margin-bottom:10px}
+.lbl{display:block;font-weight:800;font-size:14px;margin-bottom:4px}
+.hint{font-size:13px;color:var(--mute)}
+.field{margin-bottom:16px}
+select,input[type=number],input[type=text]{width:100%;min-height:44px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px}
+input[type=range]{width:100%;accent-color:var(--forest2);min-height:32px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 140px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;align-items:start}
+.seg{display:flex;border:2px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{flex:1 1 auto;min-height:44px;border:0;background:transparent;font-weight:800;font-size:14px;padding:6px 10px}
+.seg button[aria-pressed=true]{background:var(--forest2);color:#fff}
+.bigopt{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px}
+.bigopt button{text-align:left;padding:14px;border-radius:12px;border:2px solid var(--line);background:var(--bg);min-height:80px}
+.bigopt button[aria-pressed=true]{border-color:var(--forest2);background:light-dark(#dcebd9,#20402a);box-shadow:inset 0 0 0 1px var(--forest2)}
+.bigopt b{display:block;font-size:17px}
+.bigopt small{color:var(--mute);font-size:13px}
+.steps{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.step{flex:1 1 150px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:800;text-align:left;padding:6px 12px;display:flex;gap:8px;align-items:center}
+.step i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--line);flex:none}
+.step[aria-current=true]{border-color:var(--forest2)}
+.step[aria-current=true] i{background:var(--forest2);color:#fff}
+.teamnames{display:grid;gap:6px;max-height:280px;overflow:auto}
+.teamnames div{display:flex;gap:6px;align-items:center}
+.sw{width:18px;height:18px;border-radius:5px;flex:none}
+.group{margin-bottom:14px}
+.group h3{font-size:18px;color:var(--woodt);margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.group h3 button{font-family:Nunito;font-size:12px;border:1px solid var(--line);background:transparent;border-radius:6px;padding:2px 8px;min-height:30px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 12px 4px 4px;border-radius:99px;border:2px solid var(--line);background:var(--bg);font-weight:700;font-size:14px}
+.chip[aria-pressed=true]{border-color:var(--forest2);background:light-dark(#dcebd9,#20402a)}
+.chip[aria-pressed=false] .av{filter:grayscale(1);opacity:.45}
+.av{--t:#888;position:relative;width:34px;height:34px;border-radius:50%;background:var(--t);color:#fff;display:inline-grid;place-items:center;font:800 12px Nunito,sans-serif;flex:none;box-shadow:0 0 0 2px var(--t)}
+.av img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
+.av.lg{width:64px;height:64px;font-size:20px;box-shadow:0 0 0 3px var(--t)}
+.av.xl{width:96px;height:96px;font-size:26px;box-shadow:0 0 0 4px var(--t)}
+.av.out img,.av.out{filter:grayscale(1)}
+.av .tot{position:absolute;right:-7px;bottom:-5px;width:13px;height:21px;filter:drop-shadow(0 0 1px #000) drop-shadow(0 1px 0 #0008)}
+.av.lg .tot,.av.xl .tot{width:20px;height:32px;right:-8px;bottom:-4px}
+.count{color:var(--forest2)}
+.navbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+.navbar .sp{flex:1}
+.err{color:var(--danger);font-weight:800}
+.custom{display:grid;grid-template-columns:minmax(0,2fr) repeat(4,minmax(0,1fr)) auto;gap:6px;align-items:end}
+.custom label{font-size:12px;font-weight:800}
+/* episode */
+.pills{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:6px;margin-bottom:10px}
+.tbuild{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.trow{display:flex;gap:8px;align-items:center;padding:4px 8px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.trow span{flex:1;font-weight:700;font-size:14px}.trow select{flex:0 1 150px;min-height:38px;font-size:14px;padding:4px 6px;background:var(--card)}
+.relrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;margin-bottom:6px}
+.relrow.two{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto}
+.banner{background:var(--you);border:2px solid var(--sign);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner p{margin:0;flex:1 1 260px}
+.seqcta{background:var(--card);border:3px solid var(--sign);border-radius:14px;padding:16px;margin:14px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.seqcta p{margin:0;flex:1 1 260px}
+@media(max-width:600px){.relrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.pill{flex:none;min-height:40px;padding:6px 14px;border-radius:99px;border:2px solid var(--line);background:var(--card);font-weight:800;font-size:14px}
+.pill[aria-current=true]{background:var(--forest2);color:#fff;border-color:var(--forest2)}
+.secs{display:flex;gap:4px;overflow-x:auto;margin:10px 0 12px}
+.sec{flex:none;min-height:36px;padding:4px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;font-size:13px;font-weight:700;color:var(--mute)}
+.sec[aria-current=true]{background:var(--wood);color:#fff;border-color:var(--wood)}
+.ephead{display:flex;justify-content:space-between;align-items:baseline;gap:6px 10px;flex-wrap:wrap}
+.ephead h2{font-size:clamp(26px,4vw,40px);color:var(--head);text-wrap:balance}
+.blk>h3{font-size:22px;background:var(--forest);color:var(--sign);padding:10px 16px;border-radius:12px 12px 0 0}
+.blk.conf>h3{background:var(--wood);color:#fff}
+.blk.spec>h3{background:#8a2c2c;color:#fff}
+.blk ul{list-style:none;margin:0;padding:6px 16px 10px;background:var(--card);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;min-height:120px}
+.blk li{display:flex;gap:12px;align-items:center;padding:9px 0;border-bottom:1px dashed var(--line)}
+.blk li:last-child{border-bottom:0}
+.blk li .avs{display:flex;flex:none;padding-right:4px}
+.blk li .avs .av+.av{margin-left:-6px}
+.blk li.big{font-size:18px;font-weight:800}
+.blk li.bad{color:var(--danger)}
+.blk li.you{background:var(--you);margin:0 -16px;padding:9px 16px}
+.blk li.host{font-style:italic}
+.blk li.phase{padding-top:16px;font-family:"Luckiest Guy",Impact,sans-serif;font-size:18px;color:var(--woodt);letter-spacing:.4px}
+.nm{font-weight:800}
+.nm.me{text-decoration:underline wavy var(--sign) 2px;text-underline-offset:3px}
+.alname{font-weight:800;color:var(--woodt)}
+.votes{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px 14px;width:100%;font-size:14px}
+.votes span{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.votes s{opacity:.6}
+.badge{font-size:11px;font-weight:800;padding:1px 6px;border-radius:6px;background:var(--sign);color:#2a1d00;white-space:nowrap}
+.badge.x{background:var(--line);color:var(--ink)}
+.mm{width:16px;height:12px;border-radius:6px;background:#fff;border:2px solid #d8c9b5;display:inline-block;flex:none;vertical-align:-1px}
+.bar{height:8px;border-radius:4px;background:var(--line);flex:1;min-width:60px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--t,#2c5e3d)}
+.ask{border:3px solid var(--sign);background:light-dark(#fffaf0,#2a2510);border-radius:14px;padding:16px;margin-top:14px;scroll-margin-top:20px}
+.ask h3{font-size:22px;margin-bottom:10px;line-height:1.2}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.opt{text-align:left;min-height:52px;padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:var(--card);display:flex;gap:10px;align-items:center}
+.opt:hover{border-color:var(--forest2)}
+.opt b{display:block}
+.opt small{display:block;color:var(--mute);font-size:13px}
+.win{background:var(--sign);color:#2a1d00;border-radius:14px;padding:18px;text-align:center;margin:12px 0;display:grid;justify-items:center;gap:8px}
+.win h2{font-size:clamp(28px,5vw,46px)}
+/* cast page */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.ccard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:8px;justify-items:center;text-align:center;border-top:6px solid var(--t)}
+.ccard.out{opacity:.8}
+.ccard h3{font-size:20px}
+.stat{display:grid;grid-template-columns:5.5em 1fr 1.6em;gap:6px;align-items:center;font-size:12px;width:100%;text-align:left}
+.meta{font-size:13px;color:var(--mute)}
+.tagrow{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.tagrow:empty{display:none}
+.tg{font-size:12px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line)}
+/* alliances */
+.acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.acard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;border-left:6px solid var(--t)}
+.acard h3{font-size:20px;margin-bottom:8px}
+.amem{display:flex;gap:6px;flex-wrap:wrap}
+.amem span{display:flex;gap:6px;align-items:center;font-size:14px;font-weight:700;background:var(--bg);border-radius:99px;padding:2px 10px 2px 2px}
+.alog{list-style:none;margin:8px 0 0;padding:0;font-size:14px}
+.alog li{padding:4px 0;border-top:1px dashed var(--line);display:flex;gap:8px}
+.alog b{flex:none;width:3.6em;color:var(--mute)}
+.track{overflow-x:auto}
+.track table{border-collapse:collapse;font-size:13px}
+.track th,.track td{padding:6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.track th:first-child,.track td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+.dot{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--t);color:#fff;font-size:11px;line-height:22px;font-weight:800}
+/* relations */
+.rlist{display:grid;gap:4px}
+.rrow{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(80px,2fr) 3em;gap:10px;align-items:center;font-size:14px}
+.rbar{height:10px;border-radius:5px;background:var(--line);position:relative}
+.rbar i{position:absolute;top:0;bottom:0;border-radius:5px}
+table.t{border-collapse:collapse;width:100%;font-size:15px}
+table.t th,table.t td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.n,th.n{text-align:right}
+.scroll{overflow-x:auto}
+.legend{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mute)}
+.foot{font-size:13px;color:var(--mute);text-align:center;padding:20px}
+.empty{padding:30px;text-align:center;color:var(--mute)}
+@media(max-width:700px){.custom{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.custom .nmf{grid-column:1/-1}.rrow{grid-template-columns:auto minmax(0,1fr) 3em}.rrow .rbar{grid-column:1/-1;order:5}}
+@media(max-width:600px){table.t{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:no-preference){.ask{animation:pop .25s ease-out}@keyframes pop{from{opacity:0;transform:translateY(6px)}}}
+[hidden]{display:none!important}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+<style id="photos">.av.ph{background-size:cover;background-position:center}
+.ph-alejandro{background-image:url(alejandro.jpg)}
+.ph-amy{background-image:url(amy.jpg)}
+.ph-annemaria{background-image:url(annemaria.jpg)}
+.ph-axel{background-image:url(axel.jpg)}
+.ph-b{background-image:url(b.jpg)}
+.ph-beardo{background-image:url(beardo.jpg)}
+.ph-beth{background-image:url(beth.jpg)}
+.ph-blaineley{background-image:url(blaineley.jpg)}
+.ph-bowie{background-image:url(bowie.jpg)}
+.ph-brick{background-image:url(brick.jpg)}
+.ph-bridgette{background-image:url(bridgette.jpg)}
+.ph-brody{background-image:url(brody.jpg)}
+.ph-caleb{background-image:url(caleb.jpg)}
+.ph-cameron{background-image:url(cameron.jpg)}
+.ph-carrie{background-image:url(carrie.jpg)}
+.ph-chase{background-image:url(chase.jpg)}
+.ph-chef{background-image:url(chef.jpg)}
+.ph-chet{background-image:url(chet.jpg)}
+.ph-chris{background-image:url(chris.jpg)}
+.ph-cody{background-image:url(cody.jpg)}
+.ph-courtney{background-image:url(courtney.jpg)}
+.ph-crimson{background-image:url(crimson.jpg)}
+.ph-dakota{background-image:url(dakota.jpg)}
+.ph-damien{background-image:url(damien.jpg)}
+.ph-dave{background-image:url(dave.jpg)}
+.ph-dawn{background-image:url(dawn.jpg)}
+.ph-devin{background-image:url(devin.jpg)}
+.ph-dj{background-image:url(dj.jpg)}
+.ph-don{background-image:url(don.jpg)}
+.ph-duncan{background-image:url(duncan.jpg)}
+.ph-dwayne{background-image:url(dwayne.jpg)}
+.ph-ella{background-image:url(ella.jpg)}
+.ph-ellody{background-image:url(ellody.jpg)}
+.ph-emma{background-image:url(emma.jpg)}
+.ph-emmareboot{background-image:url(emmareboot.jpg)}
+.ph-ennui{background-image:url(ennui.jpg)}
+.ph-eva{background-image:url(eva.jpg)}
+.ph-ezekiel{background-image:url(ezekiel.jpg)}
+.ph-geoff{background-image:url(geoff.jpg)}
+.ph-gerry{background-image:url(gerry.jpg)}
+.ph-gwen{background-image:url(gwen.jpg)}
+.ph-harold{background-image:url(harold.jpg)}
+.ph-heather{background-image:url(heather.jpg)}
+.ph-izzy{background-image:url(izzy.jpg)}
+.ph-jacques{background-image:url(jacques.jpg)}
+.ph-jasmine{background-image:url(jasmine.jpg)}
+.ph-jay{background-image:url(jay.jpg)}
+.ph-jen{background-image:url(jen.jpg)}
+.ph-jo{background-image:url(jo.jpg)}
+.ph-josee{background-image:url(josee.jpg)}
+.ph-julia{background-image:url(julia.jpg)}
+.ph-junior{background-image:url(junior.jpg)}
+.ph-justin{background-image:url(justin.jpg)}
+.ph-katie{background-image:url(katie.jpg)}
+.ph-kelly{background-image:url(kelly.jpg)}
+.ph-kitty{background-image:url(kitty.jpg)}
+.ph-laurie{background-image:url(laurie.jpg)}
+.ph-leonard{background-image:url(leonard.jpg)}
+.ph-leshawna{background-image:url(leshawna.jpg)}
+.ph-lightning{background-image:url(lightning.jpg)}
+.ph-lindsay{background-image:url(lindsay.jpg)}
+.ph-lorenzo{background-image:url(lorenzo.jpg)}
+.ph-macarthur{background-image:url(macarthur.jpg)}
+.ph-mary{background-image:url(mary.jpg)}
+.ph-max{background-image:url(max.jpg)}
+.ph-mickey{background-image:url(mickey.jpg)}
+.ph-mike{background-image:url(mike.jpg)}
+.ph-miles{background-image:url(miles.jpg)}
+.ph-millie{background-image:url(millie.jpg)}
+.ph-mk{background-image:url(mk.jpg)}
+.ph-nichelle{background-image:url(nichelle.jpg)}
+.ph-noah{background-image:url(noah.jpg)}
+.ph-owen{background-image:url(owen.jpg)}
+.ph-pete{background-image:url(pete.jpg)}
+.ph-priya{background-image:url(priya.jpg)}
+.ph-raj{background-image:url(raj.jpg)}
+.ph-ripper{background-image:url(ripper.jpg)}
+.ph-rock{background-image:url(rock.jpg)}
+.ph-rodney{background-image:url(rodney.jpg)}
+.ph-ryan{background-image:url(ryan.jpg)}
+.ph-sadie{background-image:url(sadie.jpg)}
+.ph-sam{background-image:url(sam.jpg)}
+.ph-samey{background-image:url(samey.jpg)}
+.ph-sanders{background-image:url(sanders.jpg)}
+.ph-scarlett{background-image:url(scarlett.jpg)}
+.ph-scarygirl{background-image:url(scarygirl.jpg)}
+.ph-scott{background-image:url(scott.jpg)}
+.ph-shawn{background-image:url(shawn.jpg)}
+.ph-sierra{background-image:url(sierra.jpg)}
+.ph-sky{background-image:url(sky.jpg)}
+.ph-spud{background-image:url(spud.jpg)}
+.ph-staci{background-image:url(staci.jpg)}
+.ph-stephanie{background-image:url(stephanie.jpg)}
+.ph-sugar{background-image:url(sugar.jpg)}
+.ph-tammy{background-image:url(tammy.jpg)}
+.ph-taylor{background-image:url(taylor.jpg)}
+.ph-tom{background-image:url(tom.jpg)}
+.ph-topher{background-image:url(topher.jpg)}
+.ph-trent{background-image:url(trent.jpg)}
+.ph-tyler{background-image:url(tyler.jpg)}
+.ph-wayne{background-image:url(wayne.jpg)}
+.ph-zee{background-image:url(zee.jpg)}
+.ph-zoey{background-image:url(zoey.jpg)}</style>
+</head>
+<body>
+<header class="top">
+  <div class="topin">
+    <div class="sign"><span class="av ph ph-chris" style="width:46px;height:46px;--t:#3a210c;flex:none"></span><div><h1>Simulador Drama Total</h1><small>Fan-made, no oficial · toda la franquicia</small></div></div>
+    <div class="topbtns" id="topbtns" hidden>
+      <button class="btn ghost" id="bNew">Nueva partida</button>
+      <button class="btn ghost" id="bAgain">Repetir configuración</button>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs" hidden aria-label="Secciones"></nav>
+</header>
+<main class="wrap" id="app"></main>
+<p class="foot">Proyecto de fans sin relación oficial con la serie.</p>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const norm=s=>String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const wpick=items=>{const tot=items.reduce((s,x)=>s+Math.max(0,x[1]),0);let r=Math.random()*tot;for(const x of items){r-=Math.max(0,x[1]);if(r<=0)return x[0]}return items[0][0]};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ================= DATOS ================= */
+const ORIG={isla:'Isla del Drama',gira:'Gira Mundial',revancha:'La Venganza de la Isla',pahkitew:'Isla Pahkitew',carrera:'La Carrera Alocada',reboot:'Drama Total (2023)',custom:'Personajes propios'};
+const RAW=`isla|Beth,4,4,7,3;Bridgette,7,6,8,4;Cody,4,6,7,4;Courtney,6,8,5,8;DJ,8,4,9,3;Duncan,8,6,5,7;Eva,10,4,2,4;Ezekiel,5,3,3,2;Geoff,7,4,9,3;Gwen,6,8,5,6;Harold,4,9,4,6;Heather,5,8,3,10;Izzy,9,5,5,6;Justin,6,3,6,5;Katie,4,4,8,2;Leshawna,7,6,8,5;Lindsay,5,2,8,2;Noah,3,10,3,7;Owen,6,4,10,2;Sadie,4,4,8,2;Trent,6,6,7,4;Tyler,7,3,7,3
+gira|Alejandro,9,8,8,10;Sierra,7,7,5,6;Blaineley,4,6,4,8
+revancha|Anne Maria,6,4,5,5;B,6,10,4,8;Brick,9,4,7,3;Cameron,2,10,7,5;Dakota,4,4,6,5;Dawn,5,8,6,4;Jo,9,6,3,8;Lightning,10,2,3,4;Mike,7,6,8,4;Scott,6,6,4,9;Sam,4,5,7,3;Staci,4,3,3,2;Zoey,7,6,8,4
+pahkitew|Amy,5,4,3,8;Beardo,5,5,7,3;Dave,6,7,4,5;Ella,5,5,9,2;Jasmine,10,7,7,5;Leonard,3,4,6,3;Max,3,5,2,7;Rodney,8,3,6,2;Samey,6,6,7,4;Scarlett,4,10,4,10;Shawn,8,7,5,6;Sky,9,6,7,7;Sugar,7,3,4,6;Topher,5,5,5,7
+carrera|Carrie,6,6,8,3;Devin,6,5,7,3;Crimson,5,6,2,6;Ennui,5,6,2,6;Brody,7,4,8,2;Emma,7,8,6,7;Kitty,5,5,8,4;Jacques,8,6,4,8;Josee,8,6,3,9;MacArthur,9,4,5,6;Sanders,7,7,6,6;Chet,6,4,3,4;Lorenzo,6,4,3,4;Ryan,9,3,5,3;Stephanie,8,4,3,6;Jay,3,6,6,4;Mickey,2,5,6,3;Laurie,5,5,5,6;Miles,6,6,7,3;Dwayne,5,4,7,3;Junior,5,5,6,4;Ellody,3,10,4,6;Mary,3,10,4,6;Kelly,4,4,7,3;Taylor,5,5,3,6;Rock,6,3,7,2;Spud,5,1,6,1;Tom,4,5,6,5;Jen,4,5,6,5;Pete,7,5,3,5;Gerry,7,5,4,5;Tammy,5,4,6,4
+reboot|Axel,9,6,3,7;Bowie,5,6,8,4;Caleb,8,3,6,3;Chase,7,4,6,6;Damien,4,6,5,3;Emma,6,7,6,6;Julia,6,6,6,9;MK,6,8,5,8;Millie,4,8,4,5;Nichelle,6,6,8,6;Priya,7,8,6,8;Raj,6,5,8,3;Ripper,7,4,4,5;Scary Girl,8,5,2,6;Wayne,5,4,8,3;Zee,5,5,8,2`;
+const ROSTER=[],byId={};
+RAW.split('\n').forEach(line=>{const [o,list]=line.split('|');list.split(';').forEach(t=>{const [n,...s]=t.split(',');let id=norm(n);if(byId[id])id+=o;const c={id,n,s:s.map(Number),o};ROSTER.push(c);byId[id]=c})});
+let CUSTOM=store.get('dt_custom',[]);CUSTOM.forEach(c=>{if(!byId[c.id]){ROSTER.push(c);byId[c.id]=c}});
+const ids=s=>s.split(' ');
+const HOSTS={chris:{id:'chris',n:'Chris',host:true,alive:true,adv:[]},don:{id:'don',n:'Don',host:true,alive:true,adv:[]},chef:{id:'chef',n:'Chef',host:true,alive:true,adv:[]}};
+
+/* Relaciones y alianzas de la serie (modo con lógica) */
+const CANON_REL=[['katie','sadie',85],['noah','owen',45],['gwen','leshawna',35],['gwen','bridgette',25],['dj','geoff',30],['mike','cameron',40],['zoey','cameron',30],['cameron','brick',25],['heather','lindsay',25],['heather','beth',20],['max','scarlett',15],['harold','leshawna',30],['gwen','duncan',15],['jo','brick',10],['sierra','cody',30],['gwen','heather',-55],['heather','leshawna',-50],['gwen','courtney',-40],['courtney','heather',-35],['duncan','harold',-35],['jo','lightning',-45],['scott','dawn',-45],['ella','sugar',-45],['amy','samey',-60],['eva','heather',-30],['alejandro','heather',-10],['scott','zoey',-25],['julia','priya',-30],['mk','julia',-20]];
+const CANON_ROM=[['gwen','trent'],['duncan','courtney'],['geoff','bridgette'],['owen','izzy'],['tyler','lindsay'],['mike','zoey'],['sam','dakota'],['shawn','jasmine'],['sky','dave'],['noah','emma'],['ryan','stephanie'],['chase','emmareboot'],['raj','wayne'],['alejandro','heather'],['harold','leshawna']];
+const CANON_AL=[['Las Populares',['heather','lindsay','beth']],['El Plan Maestro',['scarlett','max']],['Los Héroes',['mike','zoey','cameron']],['El Dúo Dinámico',['katie','sadie']],['La Fiesta Eterna',['geoff','bridgette','dj']]];
+const AL_NAMES=['Los Intocables','La Cabaña 3','El Club del Malvavisco','Las Serpientes','Los del Muelle','El Pacto de la Fogata','Los Mapaches','La Resistencia','Los Fantasmas','El Escuadrón Canoa','Los Lobos','La Liga Secreta','Las Sombras','El Trío Letal','Los Rebeldes','La Mesa Redonda','Los Cuervos','El Búnker','Los Reyes del Bosque','La Hermandad'];
+const AL_COLORS=['#c0392b','#2980b9','#8e44ad','#16a085','#d35400','#27ae60','#c2185b','#7f8c8d','#b7950b','#5d4037','#00838f','#6d4c41'];
+
+/* ---------- Desafíos (fases: all = todos, reps = k representantes, aud = audición) ---------- */
+const Ph=(n,m,k,w,g,b)=>({n,m,k,w:w.split('').map(Number),g,b});
+const Ch=(n,t,d,...ph)=>({n,t,d,ph:ph.map(p=>Ph(...p))});
+const CLASSIC=[
+Ch('Concurso de talentos','Que empiece la función','Cada equipo hace audiciones y elige a sus 3 mejores artistas para el show. Chef es el jurado, y no es fácil de impresionar.',
+ ['Audiciones','aud',0,'013','{A} deja a todos con la boca abierta en la audición.','{A} desafina tanto que espanta a los pájaros.'],
+ ['El gran show','reps',3,'013','{A} recibe un 9 de Chef. ¡Un milagro!','{A} recibe un 1 de Chef y un abucheo general.']),
+Ch('Quemados','Pelotazos y lágrimas','Partido de quemados en el comedor. En cada ronda, cinco jugadores por equipo salen a la cancha.',
+ ['Primera ronda','reps',5,'310','{A} esquiva tres pelotas seguidas como en cámara lenta.','{A} recibe un pelotazo en la cara a los dos segundos.'],
+ ['Segunda ronda','reps',5,'310','{A} atrapa una pelota imposible.','{A} tropieza con sus propios cordones.'],
+ ['Ronda decisiva','reps',5,'310','{A} elimina al último rival.','{A} se esconde detrás de un compañero, pero no alcanza.']),
+Ch('El desafío del insomnio','El que se duerme pierde','Primero, una carrera alrededor del lago. Después, quedarse despiertos mientras el conductor lee la historia completa de Canadá.',
+ ['La carrera','all',0,'300','{A} termina la carrera sin despeinarse.','{A} se desmaya en la vuelta al lago.'],
+ ['Despiertos','all',0,'120','{A} lleva más de 80 horas con los ojos abiertos.','{A} se queda dormido parado, como un caballo.']),
+Ch('Búsqueda del tesoro','Llaves y sustos','Cada participante recibe una llave. En algún lugar de la isla hay un cofre que la abre… y muchas trampas en el camino.',
+ ['La búsqueda','all',0,'121','{A} encuentra su cofre en tiempo récord.','{A} abre el cofre equivocado y le salta una zarigüeya.']),
+Ch('La cena asquerosa','Menú del terror','Chef prepara un menú de varios platos y nadie quiere saber de qué están hechos. Dos valientes por equipo en cada plato.',
+ ['La entrada','reps',2,'201','{A} se come el plato sin pestañear.','{A} devuelve todo al primer bocado.'],
+ ['El plato principal','reps',2,'201','{A} pide repetir. Todos lo miran con horror.','{A} sale corriendo hacia el lago.'],
+ ['El postre','reps',2,'201','{A} se come el postre que todavía se mueve.','{A} se desmaya al ver el postre.']),
+Ch('Paintball de cacería','Cazadores y ciervos','Mitad del equipo son cazadores con pintura; la otra mitad, ciervos con astas de cartón. Sobreviví o pintá.',
+ ['La cacería','all',0,'220','{A} tiene una puntería escalofriante.','{A} termina pintado de pies a cabeza y perseguido por un oso.']),
+Ch('Enfrentá tu miedo','Fobia total','Cada participante enfrenta su peor miedo. Cada miedo superado suma un punto para el equipo.',
+ ['Frente al miedo','all',0,'111','{A} enfrenta su miedo con una valentía increíble.','{A} grita, llora y sale corriendo.']),
+Ch('Carrera de canoas','La isla maldita','Remar hasta la isla maldita, cruzarla cargando las canoas y volver antes que el otro equipo.',
+ ['Remar','all',0,'301','{A} rema como si tuviera motor.','{A} rema en círculos durante media hora.'],
+ ['La travesía','all',0,'210','{A} encuentra un atajo por el bosque.','{A} se pierde y termina perseguido por castores.'],
+ ['El regreso','all',0,'301','{A} da el último empujón hasta la orilla.','{A} se cae al agua a dos metros de la meta.']),
+Ch('Trivia de compañeros','Cuánto nos conocemos','Preguntas sobre los compañeros y sobre el programa. Respuesta incorrecta: un balde de agua helada. Tres concursantes por equipo.',
+ ['Las preguntas','reps',3,'031','{A} contesta todo bien. Da un poco de miedo.','{A} no recuerda ni su propio apellido bajo presión.']),
+Ch('Chefs por un día','La cocina del infierno','Cada equipo prepara un menú completo y elige a quien lo presenta ante el jurado.',
+ ['En la cocina','all',0,'121','{A} prepara un plato digno de restaurante.','{A} prende fuego la cocina.'],
+ ['La presentación','reps',1,'022','{A} presenta el plato con mucho estilo.','{A} deja caer la bandeja frente al jurado.']),
+Ch('El salto del acantilado','Saltá si te animás','Saltar desde un acantilado altísimo al lago con tiburones. Los que salten ganan herramientas para construir un jacuzzi.',
+ ['El salto','all',0,'301','{A} salta de cabeza sin dudarlo.','{A} se acobarda y baja por el camino de la vergüenza.'],
+ ['El jacuzzi','all',0,'121','{A} dirige la construcción como un arquitecto.','{A} se martilla el dedo cinco veces.']),
+Ch('Supervivencia en el bosque','Una noche a la intemperie','Los equipos pasan la noche en el bosque: armar refugio, conseguir comida y ser los primeros en volver.',
+ ['Armar el refugio','all',0,'121','{A} arma un refugio impecable.','{A} hace caer el refugio encima de todos.'],
+ ['Conseguir comida','all',0,'211','{A} vuelve con pescado para todos.','{A} vuelve con bayas venenosas.'],
+ ['El regreso','all',0,'210','{A} guía al equipo de vuelta mirando las estrellas.','{A} lleva al equipo en la dirección contraria.']),
+Ch('Triatlón de Chef','Tres pruebas, cero piedad','Un triatlón inventado por Chef: comer, aguantar y correr. Un representante por equipo en cada prueba.',
+ ['Comer','reps',1,'201','{A} come como si no hubiera mañana.','{A} no aguanta ni el olor.'],
+ ['Aguantar','reps',1,'210','{A} aguanta el balde de hielo sin pestañear.','{A} grita a los tres segundos.'],
+ ['Correr','reps',1,'300','{A} cruza la meta volando.','{A} corre para el lado equivocado.']),
+Ch('Construcción de balsas','A la deriva','Construir una balsa con lo que encuentren en la playa y cruzar la bahía.',
+ ['Construir','all',0,'121','{A} encuentra los mejores troncos de la playa.','{A} ata los troncos con algas. Se deshacen.'],
+ ['Navegar','all',0,'301','{A} rema con todas sus fuerzas.','{A} se cae al agua y lo rescata una gaviota.'])
+];
+const SPEC={
+accion:[
+Ch('Película de terror','Grito en el set','Hay un asesino suelto en el set (Chef con una máscara de hockey). El equipo con más sobrevivientes al amanecer gana.',['Sobrevivir','all',0,'121','{A} encuentra el escondite perfecto.','{A} se separa del grupo. Error de película.']),
+Ch('Gran musical','Cantando bajo la lluvia ácida','Cada equipo monta una escena musical. En el ensayo se eligen las dos estrellas que van al escenario.',['Ensayo','aud',0,'013','{A} brilla en el ensayo.','{A} se pisa los cordones en el ensayo.'],['La escena','reps',2,'013','{A} se lleva una ovación del set entero.','{A} se cae del escenario en plena nota alta.']),
+Ch('Escena de acción en el tren','Tren sin frenos','Recrear una escena de acción saltando entre vagones en movimiento.',['Los vagones','all',0,'301','{A} salta entre vagones como doble de riesgo.','{A} queda colgando de una puerta y grita pidiendo ayuda.']),
+Ch('Película de espías','Agente doble','Infiltrarse en la base del equipo rival, robar su maletín y escapar.',['Infiltración','all',0,'220','{A} pasa los láseres sin tocar ni uno.','{A} activa todas las alarmas a la vez.'],['La huida','reps',2,'310','{A} escapa con el maletín en una moto.','{A} se olvida el maletín.']),
+Ch('Película de superhéroes','Héroes de cartón','Inventar un superhéroe, armar su traje y demostrar sus poderes en una escena.',['El traje','all',0,'031','{A} diseña un traje espectacular.','{A} se pega los dedos con el pegamento.'],['La demostración','reps',1,'202','{A} vuela (con arnés) por todo el set.','{A} queda trabado en el arnés.'])],
+gira:[
+Ch('Desierto egipcio','Momias y camellos','Cruzar el desierto y encontrar la salida de la pirámide. Y sí: hay que cantar en el camino.',['El desierto','all',0,'301','{A} encuentra agua y salva al equipo.','{A} se pelea con un camello y pierde.'],['La pirámide','all',0,'130','{A} descifra los jeroglíficos.','{A} cae en una trampa de arena.']),
+Ch('Comercial en Japón','Luces, cámara, ¡acción!','Grabar un comercial ridículo y sobrevivir a un programa de juegos extremos.',['El comercial','reps',2,'013','{A} hace un comercial que se vuelve viral.','{A} olvida qué producto vende.'],['Juegos extremos','all',0,'310','{A} supera cada obstáculo con estilo.','{A} sale volando hacia la pileta de barro.']),
+Ch('Trineo en el Yukón','Bajo cero','Llevar un trineo cargado a través de la nieve. Sin perros.',['Arrastrar','all',0,'301','{A} arrastra el trineo prácticamente solo.','{A} se congela y hay que cargarlo.']),
+Ch('Selva amazónica','La ciudad perdida','Encontrar la ciudad perdida con un mapa casi ilegible.',['La selva','all',0,'220','{A} lee el mapa al revés… y acierta.','{A} pisa un hormiguero gigante.']),
+Ch('Olimpíadas en Grecia','Gloria antigua','Varias pruebas olímpicas, con un representante por equipo en cada una.',['Lanzamiento','reps',1,'300','{A} lanza el disco hasta el horizonte.','{A} se lanza a sí mismo.'],['Lucha','reps',1,'300','{A} gana la lucha en segundos.','{A} se rinde antes de empezar.'],['Carrera final','reps',1,'300','{A} cruza la meta con los brazos en alto.','{A} se tropieza con su propia túnica.'])],
+revancha:[
+Ch('Nado tóxico','Brillar en la oscuridad','Nadar a través del lago contaminado y recuperar barriles antes que el otro equipo.',['El nado','all',0,'301','{A} recupera tres barriles de una.','{A} sale del agua con un tercer ojo (temporal).']),
+Ch('Catapulta humana','Proyectiles','Construir una catapulta y lanzar a un compañero lo más lejos posible.',['La construcción','all',0,'130','{A} calcula el ángulo perfecto.','{A} construye la catapulta al revés.'],['El lanzamiento','reps',1,'301','{A} vuela hasta la otra orilla.','{A} vuela directo a un árbol.']),
+Ch('La mina abandonada','Oro y derrumbes','Encontrar oro en una mina llena de criaturas y salir antes del derrumbe.',['Adentro','all',0,'211','{A} encuentra una pepita enorme.','{A} se queda atrapado detrás de una roca.'],['La salida','all',0,'310','{A} sale justo antes del derrumbe.','{A} sale último, cubierto de polvo.']),
+Ch('Cazar a la bestia','La ardilla mutante','Capturar a la criatura mutante que anda suelta por la isla.',['La caza','all',0,'220','{A} arma una trampa brillante.','{A} cae en su propia trampa.']),
+Ch('El laberinto','Sin salida','Atravesar un laberinto de setos lleno de sorpresas.',['El laberinto','all',0,'130','{A} recuerda cada giro.','{A} camina en círculos durante horas.'])],
+estrellas:[
+Ch('La llave en el barro','Spa o castigo','Buscar llaves en una pileta de barro. El equipo ganador duerme en el spa.',['El barro','all',0,'301','{A} encuentra la llave correcta al primer intento.','{A} encuentra solo una bota vieja.']),
+Ch('Batalla en el laberinto','Todos contra todos','Atravesar un laberinto lleno de trampas que el conductor diseñó personalmente.',['Adentro','all',0,'121','{A} esquiva todas las trampas.','{A} termina cubierto de pegamento y plumas.']),
+Ch('Concurso de baile','Pista de estrellas','Cada equipo elige a dos bailarines para la gran final de baile.',['La coreografía','aud',0,'103','{A} se mueve como profesional.','{A} se tuerce el tobillo en el primer paso.'],['La gran final','reps',2,'103','{A} cierra con un giro perfecto.','{A} choca contra el jurado.']),
+Ch('Rescate en el hangar','Operativo hangar','Rescatar un muñeco de un hangar lleno de obstáculos.',['El hangar','all',0,'211','{A} lidera el rescate.','{A} queda colgado de una cuerda.'])],
+pahkitew:[
+Ch('Escalada a la montaña','Cumbre o caída','Escalar la montaña con objetos rarísimos atados a la espalda.',['La subida','all',0,'301','{A} llega a la cima primero.','{A} se resbala y vuelve al inicio.'],['La bajada','all',0,'211','{A} baja en trineo improvisado.','{A} baja rodando.']),
+Ch('Rompecabezas gigante','Pieza por pieza','Encontrar piezas por toda la isla y armar el rompecabezas con dos armadores por equipo.',['Juntar piezas','all',0,'211','{A} trae cuatro piezas a la vez.','{A} trae una piedra que parecía pieza.'],['El armado','reps',2,'030','{A} encaja la última pieza.','{A} pone una pieza al revés y arruina todo.']),
+Ch('Prueba de confianza','A ciegas','En parejas: uno guía, otro va con los ojos vendados por un circuito peligroso.',['En parejas','all',0,'112','{A} guía a su pareja a la perfección.','{A} manda a su pareja directo al lago.']),
+Ch('Carritos chocadores','Choque total','Tres pilotos por equipo en una pista llena de obstáculos.',['La pista','reps',3,'211','{A} esquiva todos los choques.','{A} choca contra su propio equipo.'])],
+carrera:[
+Ch('Bóveda suiza','El código secreto','Llegar a la bóveda y descifrar el código para conseguir la próxima pista.',['La llegada','all',0,'300','{A} corre como si lo persiguieran.','{A} se queda sin aire a mitad de camino.'],['El código','all',0,'030','{A} descifra el código en segundos.','{A} prueba 1234. No funciona.']),
+Ch('Plato típico gigante','Con hambre','Terminar un plato típico gigantesco para recibir la pista.',['Comer','all',0,'201','{A} limpia el plato sin respirar.','{A} se rinde a la mitad.']),
+Ch('Salto del rascacielos','Vértigo','Saltar desde un rascacielos (con arnés) y encontrar la pista en la ciudad.',['El salto','all',0,'301','{A} salta sin dudarlo.','{A} se abraza a la baranda y no la suelta.'],['La pista','all',0,'121','{A} encuentra la pista enseguida.','{A} toma el colectivo equivocado.']),
+Ch('Danza tradicional','Pasos de baile','Aprender una danza tradicional y ejecutarla sin errores frente a los jueces.',['La danza','all',0,'013','{A} aprende la coreografía al instante.','{A} pisa a medio público.']),
+Ch('Glaciar','Hielo eterno','Escalar un glaciar para llegar a la caja de pistas.',['La escalada','all',0,'310','{A} sube como cabra de montaña.','{A} se resbala tres veces seguidas.']),
+Ch('Mercado','Entre puestos','Encontrar la pista escondida en un mercado enorme.',['La búsqueda','all',0,'121','{A} se hace amigo de un vendedor que le dice dónde está.','{A} gasta todo el dinero en souvenirs.']),
+Ch('Granja','Trabajo de campo','Ordeñar, juntar huevos y cargar heno antes de seguir.',['La granja','all',0,'211','{A} ordeña como si lo hubiera hecho toda la vida.','{A} es perseguido por una gallina furiosa.'])],
+reboot:[
+Ch('Escape room','Encerrados','Encontrar las pistas y salir de la cabaña antes de que se acabe el tiempo.',['Las pistas','all',0,'130','{A} encuentra la pista clave.','{A} rompe la única llave.'],['La puerta final','reps',2,'130','{A} resuelve el último candado.','{A} se traba con el último acertijo.']),
+Ch('Fútbol en el barro','Patadas y barro','Partido de fútbol en el barro con cinco jugadores por equipo.',['Primer tiempo','reps',5,'301','{A} mete un golazo de chilena.','{A} hace un gol en contra.'],['Segundo tiempo','reps',5,'301','{A} ataja un penal.','{A} se resbala frente al arco vacío.']),
+Ch('Arte con lo que encuentres','Obra maestra','Crear una obra de arte solo con lo que haya en el bosque.',['La obra','all',0,'022','{A} crea algo que conmueve hasta a Chef.','{A} entrega una piedra pintada.'])]
+};
+const REWARDS_CH=[['Carrera de carretillas','310'],['Concurso de comer pasteles','201'],['Tiro al blanco con malvaviscos','220'],['Trivia sobre el conductor','031'],['Escondidas en el bosque','121'],['Castillos de arena','022'],['Pesca nocturna','211'],['Karaoke en la fogata','013']];
+const REWARDS=[{n:'un banquete de comida de verdad'},{n:'una tarde en el spa'},{n:'cartas de sus familias'},{n:'una noche en el hotel del conductor'},{n:'un paseo en helicóptero sobre la isla'},{n:'un mapa con la ubicación de una ventaja',adv:true}];
+const SEASONS={
+isla:{name:'Isla del Drama (T1)',cast:ROSTER.filter(c=>c.o==='isla').map(c=>c.id),teams:[['Topos Gritones',ids('beth cody gwen heather justin katie leshawna lindsay noah owen trent')],['Bagres Asesinos',ids('bridgette courtney dj duncan eva ezekiel geoff harold izzy sadie tyler')]],elim:'el Muelle de la Vergüenza',host:'chris',prize:'$100.000',ch:'isla',place:'el Campamento Wawanakwa'},
+accion:{name:'Drama Total: Acción (T2)',cast:ids('beth bridgette courtney dj duncan geoff gwen harold heather izzy justin leshawna lindsay owen trent'),teams:[['Agarres Asesinos'],['Gaffers Gritones']],elim:'el Paseo de la Vergüenza',host:'chris',prize:'$100.000',ch:'accion',place:'el set de filmación'},
+gira:{name:'Gira Mundial (T3)',cast:ids('alejandro bridgette cody courtney dj duncan ezekiel gwen harold heather izzy leshawna lindsay noah owen sierra tyler blaineley'),teams:[['Equipo Victoria',ids('bridgette dj harold leshawna lindsay')],['Equipo Amazonas',ids('cody ezekiel gwen heather sierra courtney')],['Equipo Chris es Muy Muy Muy Muy Guapo',ids('alejandro izzy noah owen tyler duncan')]],elim:'el salto del avión',host:'chris',prize:'$1.000.000',ch:'gira',place:'el avión de la Gira'},
+revancha:{name:'La Venganza de la Isla (T4)',cast:ROSTER.filter(c=>c.o==='revancha').map(c=>c.id),teams:[['Ratas Tóxicas'],['Gusanos Mutantes']],elim:'la Catapulta de la Vergüenza',host:'chris',prize:'$1.000.000',ch:'revancha',place:'la isla radiactiva'},
+estrellas:{name:'Todos Estrellas (T5)',cast:ids('alejandro cameron courtney duncan gwen heather jo lightning lindsay mike sam scott sierra zoey'),teams:[['Hámsters Heroicos'],['Buitres Villanos']],elim:'el Retrete de la Vergüenza',host:'chris',prize:'$1.000.000',ch:'estrellas',place:'la isla de Todos Estrellas'},
+pahkitew:{name:'Isla Pahkitew (T6)',cast:ROSTER.filter(c=>c.o==='pahkitew').map(c=>c.id),teams:[['Pimâpotew Kinosewak'],['Waneyihtam Maskwak']],elim:'el Cañón de la Vergüenza',host:'chris',prize:'$1.000.000',ch:'pahkitew',place:'Isla Pahkitew'},
+carrera:{name:'La Carrera Alocada (spin-off)',cast:ids('carrie devin crimson ennui geoff brody emma kitty jacques josee macarthur sanders chet lorenzo ryan stephanie jay mickey laurie miles dwayne junior ellody mary kelly taylor rock spud tom jen pete gerry noah owen'),teams:[['Mejores Amigos',['carrie','devin']],['Góticos',['crimson','ennui']],['Surfistas',['geoff','brody']],['Hermanas',['emma','kitty']],['Patinadores',['jacques','josee']],['Cadetes',['macarthur','sanders']],['Hermanastros',['chet','lorenzo']],['Novios',['ryan','stephanie']],['Gemelos',['jay','mickey']],['Veganos',['laurie','miles']],['Padre e Hijo',['dwayne','junior']],['Genios',['ellody','mary']],['Madre e Hija',['kelly','taylor']],['Rockeros',['rock','spud']],['Bloggers',['tom','jen']],['Tenistas',['pete','gerry']],['Expertos en Reality',['noah','owen']]],elim:'quedar fuera de la carrera',host:'don',prize:'$1.000.000',ch:'carrera',race:true,place:'la línea de largada'},
+reboot:{name:'Drama Total (2023)',cast:ROSTER.filter(c=>c.o==='reboot').map(c=>c.id),teams:[['Equipo Mapache'],['Equipo Oso']],elim:'el Muelle de la Vergüenza',host:'chris',prize:'$1.000.000',ch:'reboot',place:'el campamento'},
+libre:{name:'Mezcla libre (toda la franquicia)',cast:[],teams:[['Equipo Fogata'],['Equipo Malvavisco'],['Equipo Canoa']],elim:'el Muelle de la Vergüenza',host:'chris',prize:'$1.000.000',ch:'libre',place:'el Campamento Wawanakwa'}
+};
+const TEAM_NAMES=['Ardillas Furiosas','Alces Salvajes','Castores Locos','Mapaches Ninja','Truchas Voladoras','Osos Gruñones','Halcones Hambrientos','Zorros Astutos','Pumas Gritones','Sapos Saltarines','Linces Lunáticos','Gansos Rabiosos','Búhos Insomnes'];
+function fillNames(){const used=new Set(S.names.slice(0,S.teams));const pool=shuffle(TEAM_NAMES).filter(n=>!used.has(n));while(S.names.length<S.teams)S.names.push(pool.shift()||('Equipo '+(S.names.length+1)))}
+const COLORS=['#e0702b','#2f7fd6','#c23b6e','#7a4fc2','#1f9e74','#c9971a','#d14b3b','#3a9bb8','#8a6a3a','#5c7a2a','#b04fb0','#2f5fa8','#a83a3a','#3f8f5a','#9a7b20','#6a5acd','#c06030','#20808f','#7f5f9f','#4d7f2d'];
+const ADV={inmunidad:'Estatuilla de inmunidad',escudo:'Escudo para un aliado',anular:'Anulador de voto',doble:'Voto doble',extra:'Voto extra',robar:'Robo de voto',bloqueo:'Bloqueo de voto',rebote:'Tótem del rebote',desafio:'Ventaja para el desafío',falsa:'Estatuilla falsa'};
+const ADV_DESC={inmunidad:'Salva a quien elijas: a vos o a otra persona',escudo:'Salva a otra persona, no a vos',anular:'Cancela el voto de alguien',doble:'Tu voto vale dos',extra:'Votás a dos personas distintas',robar:'Alguien no vota y vos votás dos veces',bloqueo:'Alguien se queda sin votar',rebote:'Los votos en tu contra pasan a otra persona',desafio:'Arrancás adelante en el próximo desafío',falsa:'Salva a quien elijas: a vos o a otra persona'};
+const TIE_CH=[['Sacar el palito más largo','111'],['Carrera hasta el muelle','300'],['Aguantar la respiración bajo el agua','210'],['Comerse el plato sorpresa de Chef','201'],['Mantener el equilibrio sobre un tronco','210'],['Trivia relámpago','030'],['Sostener un balde lleno de agua','300']];
+const TOTEM=`<svg class="tot" viewBox="0 0 10 16" aria-hidden="true"><rect x="1" y="0" width="8" height="5" rx="1.2" fill="#c0392b"/><rect x="0" y="5.6" width="10" height="4.8" rx="1.2" fill="#f6c026"/><rect x="1" y="11" width="8" height="5" rx="1.2" fill="#2f7fd6"/><circle cx="3.4" cy="2.4" r="1" fill="#fff"/><circle cx="6.6" cy="2.4" r="1" fill="#fff"/><rect x="3" y="7.4" width="4" height="1.2" fill="#7a4b22"/><circle cx="3.4" cy="13.4" r=".9" fill="#fff"/><circle cx="6.6" cy="13.4" r=".9" fill="#fff"/></svg>`;
+const PH_IDS=new Set(['alejandro','amy','annemaria','axel','b','beardo','beth','blaineley','bowie','brick','bridgette','brody','caleb','cameron','carrie','chase','chef','chet','chris','cody','courtney','crimson','dakota','damien','dave','dawn','devin','dj','don','duncan','dwayne','ella','ellody','emma','emmareboot','ennui','eva','ezekiel','geoff','gerry','gwen','harold','heather','izzy','jacques','jasmine','jay','jen','jo','josee','julia','junior','justin','katie','kelly','kitty','laurie','leonard','leshawna','lightning','lindsay','lorenzo','macarthur','mary','max','mickey','mike','miles','millie','mk','nichelle','noah','owen','pete','priya','raj','ripper','rock','rodney','ryan','sadie','sam','samey','sanders','scarlett','scarygirl','scott','shawn','sierra','sky','spud','staci','stephanie','sugar','tammy','taylor','tom','topher','trent','tyler','wayne','zee','zoey']);
+const photo=c=>c&&c.o!=='custom'&&PH_IDS.has(c.id)?c.id:null;
+const initials=n=>{const p=n.trim().split(/\s+/);return (p.length>1?p[0][0]+p[1][0]:n.slice(0,2)).toUpperCase()};
+const origColor=o=>COLORS[Object.keys(ORIG).indexOf(o)]||'#888';
+const avS=(c,color,cls='')=>{const p=photo(c);return `<span class="av ${cls}${p?' ph ph-'+p:''}" style="--t:${color}" title="${esc(c.n)}">${p?'':esc(initials(c.n))}</span>`};
+
+/* ================= CONFIGURACIÓN (asistente en 3 pasos) ================= */
+const S={teamMap:{},rels:[],alls:[],carry:null,saga:1,special:'1',cform:{id:null,n:'',s:[5,5,5,5],rels:[],ally:[],allyName:'',open:false},step:1,season:'isla',sel:new Set(),teams:2,names:[],assign:'season',preElim:'voto',mergeAt:12,finalSize:2,finalMode:'desafio',retN:1,extraRet:0,extraN:1,mode:'sim',style:'logic',player:'',swaps:'1',adv:'1',reward:'1',dbl:'1'};
+function seasonMap(k){const m={};SEASONS[k].teams.forEach((t,i)=>(t[1]||[]).forEach(id=>m[id]=i));return m}
+function applySeason(k,keepSel){
+  const se=SEASONS[k];S.season=k;
+  if(!keepSel)S.sel=new Set(k==='libre'?shuffle(ROSTER.filter(c=>c.o!=='custom')).slice(0,18).map(c=>c.id):se.cast);
+  S.teamMap=keepSel?{}:seasonMap(k);
+  S.teams=se.teams.length;S.names=se.teams.map(t=>t[0]);
+  S.assign=se.teams.some(t=>t[1])?'season':'random';
+  S.preElim=se.race?'equipo':'voto';
+  S.mergeAt=se.race?0:Math.max(4,Math.round(S.sel.size*.55));
+  S.finalSize=se.race?3:2;S.retN=1;S.extraRet=0;S.extraN=1;if(k==='libre')S.names=shuffle(TEAM_NAMES).slice(0,3);
+}
+const segH=(id,key,opts)=>`<div class="seg" data-seg="${key}" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${String(S[key])===String(v)}">${l}</button>`).join('')}</div>`;
+const bigH=(key,opts)=>`<div class="bigopt" data-seg="${key}">${opts.map(([v,l,d])=>`<button data-v="${v}" aria-pressed="${String(S[key])===String(v)}"><b>${l}</b><small>${d}</small></button>`).join('')}</div>`;
+function stepsH(){return `<div class="steps">${['Temporada y estilo','Reglas','Elenco','Equipos y relaciones'].map((t,i)=>`<button class="step" data-step="${i+1}" aria-current="${S.step===i+1}"><i>${i+1}</i>${t}</button>`).join('')}</div>`}
+const RTYPES={mejores:['Mejores amigos',75],amigos:['Amigos',40],neutral:['Neutrales',0],crush:['Le gusta',40],pareja:['Pareja',65],rivales:['Rivales',-45],enemigos:['Enemigos',-75]};
+const optH=(v,cur,l)=>`<option value="${v}"${String(v)===String(cur)?' selected':''}>${esc(l)}</option>`;
+const typeOpts=cur=>Object.entries(RTYPES).map(([k,[l]])=>optH(k,cur,l)).join('');
+function customEditor(sel){
+  const cf=S.cform;const others=ROSTER.filter(c=>c.id!==cf.id).sort((a,b)=>a.n.localeCompare(b.n));
+  const st=['Físico','Mente','Social','Estrategia'];
+  return `<details class="group" id="cDet"${cf.open?' open':''}><summary class="lbl" id="cSum" style="cursor:pointer;min-height:36px">${cf.id?'Editar personaje propio':'Crear un personaje propio'}</summary>
+  <div class="card" style="margin-top:8px;background:var(--bg)">
+  <div class="custom"><div class="nmf"><label for="cfn">Nombre</label><input type="text" id="cfn" data-cf="n" maxlength="24" value="${esc(cf.n)}"></div>${st.map((l,i)=>`<div><label for="cfs${i}">${l}</label><input type="number" id="cfs${i}" data-cf="s${i}" min="1" max="10" value="${cf.s[i]}"></div>`).join('')}<span></span></div>
+  <span class="lbl" style="margin-top:14px">Relaciones con otros personajes</span>
+  ${cf.rels.map((r,i)=>`<div class="relrow two"><select data-cfrel="${i}" data-k="0" aria-label="Personaje">${others.map(c=>optH(c.id,r[0],c.n)).join('')}</select><select data-cfrel="${i}" data-k="1" aria-label="Tipo de relación">${typeOpts(r[1])}</select><button class="btn" data-cfreldel="${i}">Quitar</button></div>`).join('')}
+  <button class="btn" id="cfRelAdd">+ Agregar relación</button>
+  <span class="lbl" style="margin-top:14px">Arranca en alianza con</span>
+  <input type="text" data-cf="allyName" value="${esc(cf.allyName)}" placeholder="Nombre de la alianza (opcional)" aria-label="Nombre de la alianza" style="margin-bottom:8px">
+  <div class="chips">${sel.filter(c=>c.id!==cf.id).map(c=>`<button class="chip" data-cfally="${c.id}" aria-pressed="${cf.ally.includes(c.id)}">${avS(c,origColor(c.o))}${esc(c.n)}</button>`).join('')||'<span class="hint">Elegí primero el elenco.</span>'}</div>
+  <div class="row" style="margin-top:14px"><button class="btn go" id="cSave" style="flex:0 1 auto">${cf.id?'Guardar cambios':'Crear personaje'}</button>${cf.id?'<button class="btn" id="cCancel" style="flex:0 1 auto">Cancelar</button>':''}<span class="err" id="cErr"></span></div>
+  ${CUSTOM.length?`<span class="lbl" style="margin-top:16px">Tus personajes</span>${CUSTOM.map(c=>`<div class="row" style="flex-wrap:nowrap;margin-bottom:6px"><span style="flex:none">${avS(c,origColor('custom'))}</span><b style="flex:1">${esc(c.n)}</b><button class="btn" data-cedit="${c.id}" style="flex:0 0 auto">Editar</button><button class="btn" data-cdel="${c.id}" style="flex:0 0 auto">Borrar</button></div>`).join('')}`:''}
+  </div></details>`;
+}
+function step4H(se){
+  const sel=[...S.sel].map(id=>byId[id]).filter(Boolean).sort((a,b)=>a.n.localeCompare(b.n));
+  if(sel.length<2)return `<section class="card"><p class="hint">Elegí el elenco en el paso 3.</p></section>`;
+  let h='<div class="grid2" style="grid-template-columns:minmax(0,1fr)">';
+  if(S.teams>1){fillNames();
+    const tm=id=>{const i=S.teamMap[id];return i!=null&&i>=0&&i<S.teams?i:-1};
+    const cnt=Array(S.teams).fill(0);sel.forEach(c=>{const i=tm(c.id);if(i>=0)cnt[i]++});const un=sel.filter(c=>tm(c.id)<0).length;
+    h+=`<section class="card"><h2>Armado de equipos</h2>
+    <div class="row" style="margin-bottom:12px"><button class="btn" id="tmSeason"${se.teams.some(t=>t[1])?'':' disabled'}>Como en la temporada</button><button class="btn" id="tmRand">Repartir al azar ahora</button><button class="btn" id="tmClear">Dejar todo al azar</button></div>
+    <div class="tagrow" style="justify-content:flex-start;margin-bottom:12px">${S.names.slice(0,S.teams).map((n,i)=>`<span class="tg" style="border-color:${COLORS[i%COLORS.length]};border-width:2px">${esc(n)}: ${cnt[i]}</span>`).join('')}<span class="tg">Al azar: ${un}</span></div>
+    <div class="tbuild">${sel.map(c=>{const i=tm(c.id);return `<div class="trow">${avS(c,i>=0?COLORS[i%COLORS.length]:'#8a8f8b')}<span>${esc(c.n)}</span><select data-tm="${c.id}" aria-label="Equipo de ${esc(c.n)}">${optH(-1,i,'Al azar')}${S.names.slice(0,S.teams).map((n,j)=>optH(j,i,n)).join('')}</select></div>`}).join('')}</div>
+    <p class="hint">Los que quedan "Al azar" se reparten al empezar, completando los equipos más chicos.</p></section>`}
+  const ch=cur=>sel.map(c=>optH(c.id,cur,c.n)).join('');
+  h+=`<section class="card"><h2>Relaciones iniciales</h2><p class="hint" style="margin-top:0">Definí cómo arrancan algunas relaciones. El resto se arma solo según el estilo de simulación.</p>
+  ${S.rels.map((r,i)=>`<div class="relrow"><select data-rel="${i}" data-k="0" aria-label="Personaje">${ch(r[0])}</select><select data-rel="${i}" data-k="1" aria-label="Relación">${typeOpts(r[1])}</select><select data-rel="${i}" data-k="2" aria-label="Con">${ch(r[2])}</select><button class="btn" data-reldel="${i}">Quitar</button></div>`).join('')}
+  <button class="btn" id="relAdd">+ Agregar relación</button></section>`;
+  h+=`<section class="card"><h2>Alianzas iniciales</h2><p class="hint" style="margin-top:0">Alianzas que ya vienen armadas desde el primer episodio.</p>
+  ${S.alls.map((a,i)=>`<div class="group" style="border:1px solid var(--line);border-radius:12px;padding:10px"><div class="row"><input type="text" data-alname="${i}" value="${esc(a.name)}" aria-label="Nombre de la alianza"><button class="btn" data-aldel="${i}" style="flex:0 0 auto">Quitar</button></div><div class="chips" style="margin-top:8px">${sel.map(c=>`<button class="chip" data-almem="${i}" data-c="${c.id}" aria-pressed="${a.mem.includes(c.id)}">${avS(c,origColor(c.o))}${esc(c.n)}</button>`).join('')}</div></div>`).join('')}
+  <button class="btn" id="alAdd">+ Agregar alianza</button></section></div>`;
+  return h;
+}
+function drawSetup(){
+  const se=SEASONS[S.season];let h=stepsH();
+  if(S.carry)h+=`<div class="banner"><p><b>Temporada ${S.saga}</b>: con ${S.sel.size} clasificados de la temporada anterior. Sus relaciones, romances, rivalidades y alianzas siguen donde quedaron.</p><button class="btn" id="dropCarry">Empezar de cero</button></div>`;
+  if(S.step===1){
+    h+=`<div class="grid2"><section class="card"><h2>Temporada base</h2>
+      <div class="field"><select id="season" aria-label="Temporada base">${Object.entries(SEASONS).map(([k,s])=>`<option value="${k}"${k===S.season?' selected':''}>${esc(s.name)}</option>`).join('')}</select>
+      <div class="hint" style="margin-top:6px">${S.carry?'Cambiar la temporada base mantiene a los clasificados. ':''}Conduce ${HOSTS[se.host].n} · Premio: ${se.prize} · Eliminación: ${se.elim}</div></div>
+      <div class="row" style="gap:12px;flex-wrap:nowrap;align-items:center"><span style="flex:none">${avS(HOSTS[se.host],'#21482f','lg')}</span><p class="hint" style="margin:0">Elegir una temporada carga su elenco, sus equipos, sus desafíos y su forma de eliminar. Después podés cambiar todo.</p></div>
+      </section>
+      <section class="card"><h2>Estilo de simulación</h2>
+      ${bigH('style',[['logic','Con lógica','Las relaciones y alianzas tienen coherencia: arrancan como en la serie (parejas, amistades y rivalidades conocidas), los amigos se cuidan y los enemigos se votan.'],['random','Totalmente random','Cualquier cosa puede pasar: eventos, alianzas, traiciones y votos al azar. Ideal para resultados locos.']])}
+      </section>
+      <section class="card"><h2>Modo</h2>
+      ${bigH('mode',[['sim','Mirar la simulación','Mirás la temporada página por página, como si fuera la serie.'],['play','Jugar con un personaje','Elegís un personaje (en el paso 3) y decidís sus acciones, sus votos y cómo usa sus ventajas.']])}
+      </section></div>`;
+  }
+  if(S.step===2){
+    fillNames();
+    h+=`<div class="grid2"><section class="card"><h2>Equipos</h2>
+      <div class="field"><div class="row"><div><label class="lbl" for="teams">Cantidad</label><input type="number" id="teams" min="1" max="20" value="${S.teams}"></div>
+</div>
+      <div class="hint">1 equipo = todos contra todos desde el primer día. Quién va en cada equipo se arma en el paso 4.</div></div>
+      ${S.teams>1?`<div class="field"><span class="lbl" style="display:flex;justify-content:space-between;align-items:center">Nombres <button class="btn" id="randNames" style="min-height:34px;font-size:13px">Nombres al azar</button></span><div class="teamnames">${Array.from({length:S.teams},(_,i)=>`<div><span class="sw" style="background:${COLORS[i%COLORS.length]}"></span><input type="text" data-tn="${i}" value="${esc(S.names[i])}" maxlength="40" aria-label="Nombre del equipo ${i+1}"></div>`).join('')}</div></div>`:''}
+      <div class="field"><span class="lbl">Antes de la fusión, el equipo perdedor…</span>${segH('s1','preElim',[['voto','Vota a un eliminado'],['equipo','Queda fuera entero']])}<div class="hint">"Fuera entero" es el formato carrera.</div></div>
+      <div class="field"><span class="lbl">Cambios de equipo</span>${segH('s2','swaps',[['1','Sí, para equilibrar'],['0','No']])}<div class="hint">Si un equipo queda con muchos menos integrantes, se pasan jugadores para equilibrar. Con más de 2 equipos, si a uno le quedan muy pocos, se disuelve y sus miembros se reparten entre los demás.</div></div>
+      <div class="field"><label class="lbl" for="mergeAt">Fusión al quedar</label><input type="number" id="mergeAt" min="0" value="${S.mergeAt}"><div class="hint">0 = nunca se fusionan.</div></div>
+      </section>
+      <section class="card"><h2>Desafíos y votos</h2>
+      <div class="field"><span class="lbl">Desafíos de recompensa</span>${segH('s3','reward',[['1','Sí'],['0','No']])}<div class="hint">Algunos episodios tienen un desafío extra por un premio: banquete, spa, cartas de casa o una pista de ventaja.</div></div>
+      <div class="field"><span class="lbl">Eliminaciones especiales</span>${segH('s7','special',[['1','Sí'],['0','No']])}<div class="hint">Lesiones, la policía que viene a buscar a alguien, abandonos o descalificaciones: a veces alguien se va sin votación, en lugar de la ceremonia o además de ella.</div></div>
+      <div class="field"><span class="lbl">Doble eliminación</span>${segH('s4','dbl',[['1','A veces'],['0','Nunca']])}<div class="hint">En algunos episodios se van dos participantes.</div></div>
+      <div class="field"><span class="lbl">Ventajas</span>${segH('s5','adv',[['0','Ninguna'],['0.6','Pocas'],['1','Normal'],['1.8','Muchas']])}<div class="hint">Estatuilla de inmunidad, escudo para un aliado, anulador, voto doble, voto extra, robo y bloqueo de voto, tótem del rebote y ventaja para el desafío. También puede haber estatuillas falsas. Vencen antes de la semifinal.</div></div>
+      <div class="field"><label class="lbl" for="retN">Vuelven en el repechaje de la fusión</label><input type="number" id="retN" min="1" max="6" value="${S.retN}"><div class="hint">Siempre hay un repechaje justo antes de la fusión: los eliminados compiten por volver.</div></div>
+      <div class="field"><div class="row"><div><label class="lbl" for="extraRet">Repechajes extra</label><select id="extraRet">${[0,1,2,3].map(n=>`<option value="${n}"${n===S.extraRet?' selected':''}>${n===0?'Ninguno':n}</option>`).join('')}</select></div><div><label class="lbl" for="extraN">Vuelven en cada uno</label><input type="number" id="extraN" min="1" max="5" value="${S.extraN}"></div></div><div class="hint">Opcional: más repechajes repartidos en el resto de la temporada.</div></div>
+      </section>
+      <section class="card"><h2>Final</h2>
+      <div class="field"><label class="lbl" for="finalSize">Finalistas</label><select id="finalSize">${[2,3,4].map(n=>`<option${n===S.finalSize?' selected':''}>${n}</option>`).join('')}</select><div class="hint">En la semifinal, el jurado de eliminados saca a uno y el resto pasa a la final.</div></div>
+      <div class="field"><span class="lbl">La final se decide por</span>${segH('s6','finalMode',[['desafio','Desafío final'],['jurado','Voto de los eliminados']])}</div>
+      </section></div>`;
+  }
+  if(S.step===3){
+    const groups=Object.keys(ORIG).map(o=>[o,ROSTER.filter(c=>c.o===o)]).filter(g=>g[1].length);
+    const sel=[...S.sel].map(id=>byId[id]).filter(Boolean).sort((a,b)=>a.n.localeCompare(b.n));
+    if(!S.sel.has(S.player))S.player=sel[0]?.id||'';
+    h+=`<section class="card"><h2>Elenco · <span class="count">${S.sel.size} elegidos</span></h2>
+      <div class="row" style="margin-bottom:14px"><button class="btn" id="selNone">Vaciar</button><button class="btn" id="selSeason">Elenco de la temporada</button>
+      <div class="row" style="flex:2 1 260px;flex-wrap:nowrap"><input type="number" id="randN" value="16" min="4" max="120" aria-label="Cantidad al azar" style="max-width:90px"><button class="btn" id="selRand">Al azar de toda la franquicia</button></div></div>
+      ${S.mode==='play'?`<div class="field" style="max-width:420px"><label class="lbl" for="player">Tu personaje</label><select id="player">${sel.map(c=>`<option value="${c.id}"${c.id===S.player?' selected':''}>${esc(c.n)}</option>`).join('')}</select></div>`:''}
+      ${groups.map(([o,list])=>`<div class="group"><h3>${ORIG[o]} <button data-all="${o}">todos</button><button data-none="${o}">ninguno</button></h3><div class="chips">${list.map(c=>`<button class="chip" data-id="${c.id}" aria-pressed="${S.sel.has(c.id)}" title="Físico ${c.s[0]} · Mente ${c.s[1]} · Social ${c.s[2]} · Estrategia ${c.s[3]}">${avS(c,origColor(o))}${esc(c.n)}</button>`).join('')}</div></div>`).join('')}
+      ${customEditor(sel)}
+      </section>`;
+  }
+  if(S.step===4)h+=step4H(se);
+  h+=`<div class="navbar">${S.step>1?`<button class="btn" data-step="${S.step-1}">← Anterior</button>`:''}<span class="sp"></span><span class="err" id="err"></span>${S.step<4?`<button class="btn go" data-step="${S.step+1}">Siguiente →</button>`:`<button class="btn go" id="start" style="font-size:18px;padding:10px 28px">¡Empezar temporada!</button>`}</div>`;
+  $('#app').innerHTML=h;
+}
+const num=(v,d)=>{v=parseInt(v,10);return isNaN(v)?d:v};
+function readStep2(){if(S.step!==2)return;S.teams=clamp(num($('#teams').value,2),1,20);S.mergeAt=Math.max(0,num($('#mergeAt').value,0));S.retN=clamp(num($('#retN').value,1),1,6);S.extraRet=+$('#extraRet').value;S.extraN=clamp(num($('#extraN').value,1),1,5);S.finalSize=+$('#finalSize').value}
+
+/* ================= MOTOR ================= */
+let G=null;
+const L=()=>G.cfg.style==='logic';
+const key=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+const rel=(a,b)=>G.rel[key(a.id,b.id)]||0;
+const addRel=(a,b,d)=>{if(!a||!b||a===b||a.host||b.host)return;const k=key(a.id,b.id);G.rel[k]=clamp((G.rel[k]||0)+d,-100,100)};
+const alive=()=>G.cast.filter(c=>c.alive);
+const liveTeams=()=>G.teams.map((t,i)=>i).filter(i=>G.cast.some(c=>c.alive&&c.team===i));
+const teamOf=i=>alive().filter(c=>c.team===i);
+const units=()=>G.race?liveTeams().length:alive().length;
+const me=()=>G.player?G.cast.find(c=>c.id===G.player):null;
+const playing=()=>{const p=me();return !!(p&&p.alive)};
+const col=c=>c.host?'#21482f':!c.alive?'#8a8f8b':(G.merged||c.team<0)?'#b8862b':G.teams[c.team].color;
+const av=(c,cls='')=>{const p=photo(c);const adv=!c.host&&c.alive&&c.adv.length;return `<span class="av ${cls}${c.alive?'':' out'}${p?' ph ph-'+p:''}" style="--t:${col(c)}" title="${esc(c.n)}${adv?' · tiene una ventaja':''}">${p?'':esc(initials(c.n))}${adv?TOTEM:''}</span>`};
+const nm=c=>`<span class="nm${c.id===G.player?' me':''}">${esc(c.n)}</span>`;
+const fmt=(t,a,b,x)=>t.replaceAll('{A}',a?nm(a):'').replaceAll('{B}',b?nm(b):'').replaceAll('{C}',x?nm(x):'');
+const teamName=i=>`<b style="color:${G.teams[i].color}">${esc(G.teams[i].name)}</b>`;
+const threat=c=>(c.s[0]+c.s[1]+c.s[2]+c.s[3])*1.2+c.wins*6;
+const hasAdv=(c,t)=>c.adv.includes(t);
+const useAdv=(c,t)=>{c.adv.splice(c.adv.indexOf(t),1);if(t!=='falsa')c.advUsed++};
+const HOST=()=>HOSTS[G.se.host];
+const H=()=>HOST().n;
+const noise=b=>L()?b:b*3;
+function arch(c){const[f,m,s,e]=c.s;if(e>=8&&s<=5)return'villano';if(e>=8)return'estratega';if(f>=9)return'atleta';if(m>=9)return'cerebro';if(s>=8)return'social';if(e<=2&&m<=4)return'despistado';return'normal'}
+const bestFriend=c=>alive().filter(x=>x!==c).reduce((a,x)=>!a||rel(c,x)>rel(c,a)?x:a,null);
+const worstRival=c=>alive().filter(x=>x!==c).reduce((a,x)=>!a||rel(c,x)<rel(c,a)?x:a,null);
+const note=(chars,html)=>G.notes.push({chars,html});
+
+/* --- alianzas --- */
+const actAl=()=>G.alli.filter(a=>!a.ended);
+const allyOf=c=>actAl().find(a=>a.mem.includes(c.id));
+const allied=(a,b)=>{const x=allyOf(a);return !!x&&x.mem.includes(b.id)};
+const byIdG=id=>G.cast.find(c=>c.id===id);
+const alH=al=>`<span class="alname">«${esc(al.name)}»</span>`;
+function alLog(al,t){al.log.push({ep:G.ep,t})}
+function formAl(mem,name){
+  const al={id:G.alSeq++,name:name||G.alNames.shift()||('Alianza '+G.alSeq),mem:[],formed:G.ep,ended:0,log:[],target:null,color:AL_COLORS[G.alSeq%AL_COLORS.length]};
+  mem.forEach(c=>{const o=allyOf(c);if(o)leaveAl(o,c,`se va para formar ${al.name}`)});
+  al.mem=mem.map(c=>c.id);G.alli.push(al);alLog(al,`Se forma con ${mem.map(c=>c.n).join(', ')}.`);return al;
+}
+function joinAl(al,c){const o=allyOf(c);if(o===al)return;if(o)leaveAl(o,c,`se pasa a «${al.name}»`);al.mem.push(c.id);alLog(al,`${c.n} se suma.`)}
+function leaveAl(al,c,why){if(!al.mem.includes(c.id))return;al.mem=al.mem.filter(i=>i!==c.id);alLog(al,`${c.n} ${why}.`);if(al.mem.length<2){al.ended=G.ep||1;alLog(al,'La alianza se disuelve.')}}
+function accepts(b,a){return L()?rel(a,b)+rnd(-10,25)+(b.s[3]>=6?4:0)>14:Math.random()<.5}
+function allianceDeal(a,b){const al=allyOf(a);if(al){if(!al.mem.includes(b.id))joinAl(al,b);return al}const bl=allyOf(b);if(bl){joinAl(bl,a);return bl}return formAl([a,b])}
+const alCap=()=>Math.max(3,Math.ceil(alive().length/2));
+function alLeader(al){return al.mem.map(byIdG).filter(c=>c&&c.alive).reduce((a,c)=>!a||c.s[3]+c.s[2]/2>a.s[3]+a.s[2]/2?c:a,null)}
+
+/* --- romances --- */
+const romFind=(a,b)=>G.rom.find(r=>(r.a===a.id&&r.b===b.id)||(r.a===b.id&&r.b===a.id));
+const partnerOf=c=>{const r=G.rom.find(r=>r.st==='pareja'&&(r.a===c.id||r.b===c.id));if(!r)return null;const o=byIdG(r.a===c.id?r.b:r.a);return o};
+const isCouple=(a,b)=>{const r=romFind(a,b);return !!r&&r.st==='pareja'};
+const free=c=>!G.rom.some(r=>(r.st==='pareja'||r.st==='crush')&&(r.a===c.id||r.b===c.id));
+
+/* --- ventajas --- */
+function randomAdvType(){return wpick([['inmunidad',.9],['escudo',.8],['anular',1.2],['doble',1.2],['extra',1],['robar',.8],['bloqueo',1],['rebote',.6],['desafio',1.1]])}
+const advActive=()=>alive().reduce((s,c)=>s+c.adv.filter(t=>t!=='falsa').length,0);
+function canGiveAdv(){return G.cfg.adv>0&&!G.advExpired&&advActive()<Math.max(1,Math.floor(alive().length/5))}
+function recvAdv(c,t){c.adv.push(t);if(t==='falsa')c.fakeGot++;else c.advGot++}
+function setTeam(c,i){if(c.team!==i){c.team=i;c.teamHist.push(i)}}
+function giveAdv(c,t){t=t||randomAdvType();recvAdv(c,t);return t}
+const advLabel=(c,t)=>t==='falsa'&&G.player===c.id?ADV.inmunidad:ADV[t];
+const advTxt=(c,t)=>(c===me()||!G.player)?`: ${advLabel(c,t)} (${ADV_DESC[t].toLowerCase()})`:'';
+
+/* --- textos --- */
+const CONF={
+villano:['Esto no es un campamento de amigos. Vine a ganar.','{R} cree que estamos bien. Pobre ilusión.','Los buenos llegan segundos. Siempre.','Que me odien. Mientras me teman, sirve.'],
+estratega:['Tengo todo calculado. Bueno, casi todo.','Si juego bien mis cartas, {R} se va antes que yo.','Alianzas, votos, números: esto es ajedrez con barro.','No confío en nadie. Ni en {F}. Bueno, un poquito en {F}.'],
+atleta:['¡Denme un desafío físico y los aplasto a todos!','No entiendo tanta estrategia. Yo corro más rápido y listo.','{R} no aguantaría ni diez flexiones.','Si perdemos el próximo desafío, no va a ser por mí.'],
+cerebro:['Estadísticamente, mis chances son excelentes.','Esta gente no lee las instrucciones. Yo sí.','{R} es un problema que hay que resolver.','Cada error de los demás es un punto a mi favor.'],
+social:['¡Los quiero a todos! Bueno… a casi todos.','{F} es lo mejor que me pasó en este programa.','Si todos me quieren, nadie me vota, ¿no?','Con {R} es imposible. Lo intenté, en serio.'],
+despistado:['¿Ya empezó el desafío? ¿Cuál desafío?','Creo que hice una amiga. Era una ardilla.','No sé qué es una alianza, pero quiero una.','{F} me explicó las reglas. Dos veces. Sigo sin entender.'],
+normal:['Solo quiero llegar lejos y no comer más la comida de Chef.','{R} me está volviendo loco.','Paso a paso. Hoy, sobrevivir.','Con {F} de mi lado, me siento con chances.']};
+function confQuote(c){
+  const o=[...CONF[arch(c)]];const al=allyOf(c),p=partnerOf(c);
+  if(al)o.push(`Mi alianza, ${al.name}, es lo más sólido que tengo. O eso quiero creer.`,`Si ${al.name} se mantiene unida, llegamos a la final.`);
+  else o.push('Estoy solo en esto. Necesito una alianza ya.');
+  if(p)o.push(`Lo mío con ${p.n} es real. No es para las cámaras.`,`${p.n} es lo único bueno de esta isla.`);
+  if(c.adv.length)o.push('Digamos que tengo un as bajo la manga. No digo más.');
+  if(c.lastVotes>=2)o.push('Me votaron. Tengo muy buena memoria.');
+  if(c.wins>=3)o.push('Gané tantos desafíos que ya me ven como amenaza. Lo sé.');
+  const r=worstRival(c),f=bestFriend(c);
+  return esc(pick(o).replaceAll('{R}',r?r.n:'alguien').replaceAll('{F}',f?f.n:'nadie'));
+}
+const LAST=['Me voy con la frente en alto… y con barro hasta las orejas.','¡Esto no termina acá! ¡Me van a extrañar!','{R}, esto es tu culpa. Que lo sepas.','Fue un placer. Bueno, la mayoría de las veces.','¡Pido revancha!','Al menos no tengo que comer más la comida de Chef.','{F}, ganalo por mí.'];
+const SOLO=['{A} se pasa la noche cantando junto a la fogata.','{A} se queja de la comida de Chef a quien quiera escuchar.','{A} entrena a escondidas en el bosque.','{A} se cae del muelle mientras se lavaba los dientes.','{A} intenta amigarse con un oso. No sale bien.','{A} espía a los demás desde los arbustos.','{A} se pierde buscando el baño.','{A} anota un plan secreto en una servilleta.','{A} encuentra una ardilla y la nombra su mascota oficial.','{A} se queda despierto mirando las estrellas y pensando en su familia.','{A} habla solo frente al lago. Nadie se anima a preguntar.','{A} practica su discurso de ganador frente al espejo.'];
+const POS=['{A} y {B} charlan hasta tarde en el muelle.','{A} comparte su postre con {B}.','{A} defiende a {B} de una burla.','{A} y {B} le hacen una broma a Chef y nadie los descubre.','{A} ayuda a {B} a buscar algo que perdió en el lago.','{A} y {B} descubren que tienen el mismo programa favorito.','{A} le presta su campera a {B} en una noche helada.','{A} le enseña a {B} a pescar.','{A} y {B} se ríen hasta las lágrimas en la cabaña.','{A} cubre a {B} cuando Chef pregunta quién rompió la ventana.','{A} le cura una ampolla a {B} con el botiquín.','{A} y {B} arman juntos una guitarra con una lata y elásticos.'];
+const NEG=['{A} se burla del peinado de {B}.','{A} acusa a {B} de robarle el desodorante.','{A} y {B} se pelean por el turno de la ducha.','{A} ronca toda la noche y {B} no pega un ojo.','{A} le echa la culpa a {B} por la última derrota.','{A} se come la última porción de pastel que {B} tenía guardada.','{A} imita a {B} delante de todos.','{A} y {B} discuten a los gritos por una tontería.','{A} le dice a {B} que no tiene ninguna chance de ganar.','{A} usa la toalla de {B} sin permiso.','{A} tira la ropa de {B} al lago "sin querer".','{A} le pone apodos a {B} que se vuelven famosos en el campamento.'];
+const PRANK=['{A} le pone pegamento en el champú a {B}.','{A} llena de grillos la cama de {B}.','{A} le cambia el azúcar por sal a {B} en el desayuno.','{A} le esconde todos los zapatos a {B}.','{A} le pinta bigotes a {B} mientras duerme.'];
+const TRIO_POS=['{A}, {B} y {C} organizan una fiesta secreta en la cabaña.','{A}, {B} y {C} se escapan a nadar de noche.','{A}, {B} y {C} arman una banda y ensayan toda la tarde.'];
+
+/* ================= ESTRUCTURA DE EPISODIO (cada sección = una página) ================= */
+function gate(){return new Promise(r=>{G.gate=r;draw()})}
+async function sec(E,h,cls=''){
+  if(E.blocks.length&&!G.auto)await gate();
+  const b={h,cls,items:[]};E.blocks.push(b);
+  if(!G.auto){G.view={e:G.episodes.length-1,s:E.blocks.length-1};G.tab='ep';if(!G.full)window.scrollTo({top:0})}
+  draw();return b;
+}
+function line(b,chars,html,cls=''){chars=chars.filter(Boolean);if(chars.some(c=>c.id===G.player))cls+=' you';b.items.push({avh:chars.length&&chars.length<=6?chars.map(c=>av(c)).join(''):'',html,cls});draw()}
+const hline=(b,html)=>line(b,[HOST()],html,'host');
+function ask(q,opts){return new Promise(res=>{G.pending={q,opts,res};G.view={e:G.episodes.length-1,s:G.episodes[G.episodes.length-1].blocks.length-1};G.tab='ep';draw(true);requestAnimationFrame(()=>{const a=$('#askBox');if(a)a.scrollIntoView({behavior:'smooth',block:'nearest'})})})}
+const yesNo=(q,y,n,hy='',hn='')=>ask(q,[{v:true,label:y,hint:hy},{v:false,label:n,hint:hn}]);
+const relHint=c=>{const p=me();const r=Math.round(rel(p,c));const al=allyOf(p);return `Relación: ${r>0?'+':''}${r}${allied(p,c)?' · aliado':''}${isCouple(p,c)?' · pareja':''}${al&&al.target===c.id?' · objetivo de tu alianza':''}`};
+const chooseTarget=(q,list,extra)=>ask(q,list.map(c=>({v:c,chars:[c],label:c.n,hint:extra?extra(c):''})));
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+function applyRelType(a,b,t){const k=key(a.id,b.id);G.rel[k]=RTYPES[t][1];
+  if(t==='pareja'||t==='crush'){G.rom=G.rom.filter(r=>r.st==='ex'||![a.id,b.id].includes(r.a)&&![a.id,b.id].includes(r.b));G.rom.push({a:a.id,b:b.id,st:t==='pareja'?'pareja':'crush'})}
+  if(t==='rivales'||t==='enemigos'){G.rivals.add(k);G.bff.delete(k)}
+  if(t==='mejores'){G.bff.add(k);G.rivals.delete(k)}}
+function startGame(cfg){
+  const sel=[...cfg.sel].map(id=>byId[id]).filter(Boolean);
+  const se=SEASONS[cfg.season];
+  const T=Math.max(1,cfg.teams);
+  const teams=Array.from({length:T},(_,i)=>({name:cfg.names[i]||('Equipo '+(i+1)),color:COLORS[i%COLORS.length]}));
+  const cast=sel.map(c=>({...c,s:c.s.slice(),alive:true,team:-1,wins:0,va:0,adv:[],advUsed:0,eo:0,ep:null,debuff:false,lowkey:false,lastVotes:0,advGot:0,fakeGot:0,indWins:0,returned:0,teamHist:[]}));
+  if(T>1){
+    const tmap=cfg.teamMap||{};cast.forEach(c=>{const i=tmap[c.id];if(i!=null&&i>=0&&i<T)c.team=i});
+    shuffle(cast.filter(c=>c.team<0)).forEach(c=>{const cnt=teams.map((t,i)=>cast.filter(x=>x.team===i).length);c.team=cnt.indexOf(Math.min(...cnt))});
+  }
+  cast.forEach(c=>{c.team0=c.team;c.teamHist=c.team>=0?[c.team]:[]});
+  G={cfgRaw:cfg,lastSpecial:0,full:false,seq:null,cfg:{...cfg,adv:+cfg.adv,swaps:cfg.swaps==='1',reward:cfg.reward==='1',dbl:cfg.dbl==='1',special:cfg.special==='1',saga:cfg.saga||1},se,cast,teams,merged:T<=1,race:T>1&&cfg.preElim==='equipo',ep:0,episodes:[],rel:{},alli:[],alSeq:0,alNames:shuffle(AL_NAMES),rom:[],rivals:new Set(),bff:new Set(),used:[],eo:0,over:false,player:cfg.mode==='play'?cfg.player:null,view:{e:0,s:0},tab:'ep',pending:null,gate:null,busy:false,auto:false,lastSwap:0,lastDbl:0,lastOut:[],lastWin:null,lastLose:null,advExpired:false,notes:[],fakes:{},lastNoVote:0,retPlan:[],snap:[],votes:[],relSel:null,alEp:null};
+  const has=id=>cast.find(c=>c.id===id);
+  for(let i=0;i<cast.length;i++)for(let j=i+1;j<cast.length;j++){const a=cast[i],b=cast[j];
+    G.rel[key(a.id,b.id)]=Math.round(L()?rnd(-8,8)+(a.o===b.o?5:0)+(a.team===b.team&&T>1?(G.race?30:5):0):rnd(-25,25)+(a.team===b.team&&G.race?20:0))}
+  if(cfg.carry){const C=cfg.carry;
+    for(const k in C.rel){const [a,b]=k.split('|');if(has(a)&&has(b))G.rel[k]=C.rel[k]}
+    G.rom=C.rom.filter(r=>has(r.a)&&has(r.b)).map(r=>({...r}));C.rivals.forEach(k=>{const [a,b]=k.split('|');if(has(a)&&has(b))G.rivals.add(k)});C.bff.forEach(k=>{const [a,b]=k.split('|');if(has(a)&&has(b))G.bff.add(k)});
+    C.al.forEach(a=>{const mem=a.mem.map(has).filter(Boolean);if(mem.length>=2&&mem.every(c=>!allyOf(c))){const al=formAl(mem,a.name);al.log[0].t='Viene de la temporada anterior: '+mem.map(c=>c.n).join(', ')+'.'}});
+  }else if(L()){
+    CANON_REL.forEach(([x,y,v])=>{const a=has(x),b=has(y);if(a&&b)G.rel[key(a.id,b.id)]=v+Math.round(rnd(-5,5))});
+    CANON_ROM.forEach(([x,y])=>{const a=has(x),b=has(y);if(a&&b&&free(a)&&free(b)){G.rom.push({a:a.id,b:b.id,st:'crush'});G.rel[key(a.id,b.id)]=Math.max(rel(a,b),40)}});
+    CANON_AL.forEach(([n,m])=>{const mem=m.map(has).filter(Boolean);if(mem.length<2)return;const tm=G.merged||G.race?mem:mem.filter(c=>c.team===mem[0].team);if(tm.length>=2&&tm.every(c=>!allyOf(c))){G.ep=0;const al=formAl(tm,n);al.log[0].t='Viene armada desde la serie: '+tm.map(c=>c.n).join(', ')+'.'}});
+  }
+  cast.filter(c=>c.o==='custom').forEach(c=>{(c.rels||[]).forEach(([id,t])=>{const o=has(id);if(o&&RTYPES[t])applyRelType(c,o,t)});const mem=[c,...(c.ally||[]).map(has).filter(Boolean)];if(mem.length>=2){const al=formAl(mem,c.allyName||undefined);al.log[0].t='Alianza inicial: '+mem.map(x=>x.n).join(', ')+'.'}});
+  (cfg.rels||[]).forEach(([x,t,y])=>{const a=has(x),b=has(y);if(a&&b&&a!==b&&RTYPES[t])applyRelType(a,b,t)});
+  (cfg.alls||[]).forEach(a=>{const mem=a.mem.map(has).filter(Boolean);if(mem.length>=2){const al=formAl(mem,a.name||undefined);al.log[0].t='Alianza inicial: '+mem.map(x=>x.n).join(', ')+'.'}});
+  {const M=cfg.mergeAt>0?cfg.mergeAt:cast.length,lo=cfg.finalSize+2,x=+cfg.extraRet||0;for(let k=1;k<=x;k++){const t=Math.round(M-(M-lo)*k/(x+1));if(t>=lo&&t<M)G.retPlan.push(t)}}
+  G.snap.push({ep:0,al:actAl().map(a=>({id:a.id,mem:a.mem.slice()}))});
+  $('#topbtns').hidden=false;$('#tabs').hidden=false;
+  window.scrollTo(0,0);nextEpisode();
+}
+async function nextEpisode(){
+  if(!G||G.busy||G.over)return;G.busy=true;G.ep++;
+  const E={n:G.ep,title:'Episodio '+G.ep,blocks:[],left:alive().length};G.episodes.push(E);
+  if(!G.auto){G.view={e:G.episodes.length-1,s:0};G.tab='ep'}
+  const myG=G;
+  G.cur=(async()=>{try{await runEpisode(E)}finally{if(myG===G){G.busy=false;E.done=true;G.snap.push({ep:E.n,al:actAl().map(a=>({id:a.id,mem:a.mem.slice()}))});draw()}}})();
+  return G.cur;
+}
+async function runEpisode(E){
+  const fs=G.cfg.finalSize;
+  if(units()<=fs){await finale(E);return}
+  if(E.n===1)await intro(E);else await recap(E);
+  if(shouldMerge()){if(G.cfg.retN>0)await returnEvent(E,G.cfg.retN,'Repechaje antes de la fusión');await doMerge(E)}
+  else await extraReturn(E);
+  if(!G.race&&units()===fs+1&&G.cast.some(c=>!c.alive)){await semifinal(E);return}
+  await teamBalance(E);
+  const post=G.merged&&units()>fs+2;
+  const dbl=G.cfg.dbl&&!G.race&&units()>=fs+4&&E.n>=3&&E.n-G.lastDbl>=4&&Math.random()<.16&&(G.merged||liveTeams().every(i=>teamOf(i).length>=3));
+  E.noVote=!dbl&&post&&E.n-G.lastNoVote>=3&&Math.random()<.13;
+  const special=G.cfg.special&&!G.race&&!dbl&&!E.noVote&&units()>fs+2&&E.n>=2&&E.n-G.lastSpecial>=3&&Math.random()<(L()?.07:.11);
+  await camp(E);
+  if(G.cfg.reward&&!G.race&&E.n>1&&Math.random()<.35)await rewardChallenge(E);
+  await confessional(E);
+  if(dbl){G.lastDbl=E.n;const b=await sec(E,'¡Sorpresa!','spec');hline(b,`${H()}: "¿Pensaban que esta noche se iba uno solo? Error. ¡Hoy es doble eliminación! Los dos más votados se van."`);line(b,[],'Las alianzas tienen que reorganizarse a toda velocidad.','big')}
+  const res=await challenge(E);
+  if(res.type==='team'&&G.race)await raceElim(E,res);
+  else if(E.noVote&&res.last){G.lastNoVote=E.n;await directElim(E,res.last)}
+  else{let skip=false;
+    if(special){G.lastSpecial=E.n;skip=await specialElim(E,res)}
+    if(!skip&&!(res.type==='team'&&teamOf(res.loser).length<2))await ceremony(E,res,dbl?2:1)}
+  alive().forEach(c=>{c.lowkey=false;c.debuff=false});
+  if(!G.over){const u=units();
+    if(u<=fs)line(await sec(E,'Próximamente'),[],`Quedan ${u} ${G.race?'equipos':'participantes'}: ¡se viene la gran final!`,'big');
+    else if(!G.race&&u===fs+1)line(await sec(E,'Próximamente'),[],`Quedan ${u}: en la semifinal, el jurado de eliminados decide quién no llega a la final.`,'big')}
+}
+async function intro(E){
+  const b=await sec(E,'Bienvenida');
+  if(G.cfg.saga>1)hline(b,`¡Bienvenidos a la temporada ${G.cfg.saga}! Solo los mejores de la temporada anterior consiguieron volver.`);
+  hline(b,`${H()} recibe a ${G.cast.length} participantes en ${G.se.place}. Hay ${G.se.prize} en juego y solo ${G.race?'un equipo':'una persona'} se lo va a llevar.`);
+  line(b,[HOSTS.chef],'Chef mira a los recién llegados desde la cocina y afila un cuchillo. Mal presagio.');
+  if(G.teams.length>1)G.teams.forEach((t,i)=>{const m=G.cast.filter(c=>c.team===i);line(b,m.length<=6?m:[],`<span>${teamName(i)}: ${m.map(nm).join(', ')}</span>`)});
+  else line(b,[],'No hay equipos: es cada uno por su cuenta desde el primer día.');
+  actAl().forEach(al=>line(b,al.mem.map(byIdG),`${al.mem.map(i=>nm(byIdG(i))).join(', ')} llegan con un pacto armado de antes: la alianza ${alH(al)}.`));
+  G.rom.filter(r=>r.st==='crush').slice(0,3).forEach(r=>{const a=byIdG(r.a),c=byIdG(r.b);line(b,[a,c],fmt('Entre {A} y {B} hay miradas que dicen mucho desde el primer minuto.',a,c))});
+  if(playing()){const P=me();line(b,[P],`Jugás con ${nm(P)}${G.teams.length>1&&!G.merged?' en '+teamName(P.team):''}. Cuidá tus relaciones: son las que deciden los votos.`)}
+  G.lastOut=[];
+}
+async function recap(E){
+  const b=await sec(E,`Anteriormente en ${G.se.name.replace(/\s*\(.*\)/,'')}`);
+  if(G.lastOut.length)line(b,G.lastOut,`${G.lastOut.map(nm).join(' y ')} ${G.lastOut.length>1?'quedaron':'quedó'} fuera del juego.`);
+  const ns=G.notes.slice(-4);G.notes=[];ns.forEach(n=>line(b,n.chars,n.html));
+  const big=actAl().sort((x,y)=>y.mem.length-x.mem.length)[0];
+  if(big)line(b,big.mem.map(byIdG),`La alianza más fuerte es ${alH(big)}, con ${big.mem.length} integrantes.`);
+  if(playing()){const P=me();const al=allyOf(P);const r=worstRival(P);const p=partnerOf(P);
+    line(b,[P],`Tu situación: ${al?'en la alianza '+alH(al):'sin alianza'}${p?'; en pareja con '+nm(p):''}${r&&rel(P,r)<-15?'; tu mayor rival es '+nm(r):''}${P.adv.length?'; guardás '+P.adv.map(t=>advLabel(P,t)).join(' y '):''}.`)}
+}
+async function returnEvent(E,n,title){
+  const pool=G.cast.filter(c=>!c.alive);if(!pool.length||G.race)return;
+  const b=await sec(E,title,'spec');
+  n=Math.min(n,pool.length);
+  hline(b,`${H()} reúne a los ${pool.length} eliminados: ${n===1?'uno vuelve':n+' vuelven'} a competir. Para ganarse el lugar tienen que cruzar la pista de obstáculos de Chef.`);
+  const ranked=pool.map(c=>({c,v:c.s[0]*1.4+c.s[1]+c.s[2]*.6+rnd(0,noise(18))})).sort((a,b)=>b.v-a.v);
+  if(ranked.length>n)line(b,[ranked[ranked.length-1].c],fmt('{A} se queda trabado en el primer obstáculo.',ranked[ranked.length-1].c),'bad');
+  if(ranked.length>n+1)line(b,[ranked[n].c],fmt('{A} queda a centímetros de volver. Tan cerca…',ranked[n].c),'bad');
+  ranked.slice(0,n).forEach(({c})=>{c.alive=true;c.returned++;c.eo=0;c.ep=null;c.adv=[];
+    if(!G.merged){const lt=liveTeams().length?liveTeams():G.teams.map((t,i)=>i);const cnt=lt.map(i=>teamOf(i).length);setTeam(c,lt[cnt.indexOf(Math.min(...cnt))])}
+    line(b,[c],`${nm(c)} gana su lugar y vuelve al juego${G.merged||shouldMerge()?'':' con '+teamName(c.team)}.`,'big');
+    alive().forEach(o=>{if(o!==c&&rel(o,c)<0)addRel(o,c,-5)});note([c],`${nm(c)} volvió al juego en el repechaje.`)});
+  const back=ranked.slice(0,n).map(x=>x.c);if(back.length>=2&&L()&&rel(back[0],back[1])>0){const al=allianceDeal(back[0],back[1]);line(b,back.slice(0,2),`Los que volvieron se juntan enseguida: ${alH(al)}.`)}
+}
+async function extraReturn(E){
+  if(!G.retPlan.length||G.race||units()<=G.cfg.finalSize+2)return;
+  if(alive().length<=G.retPlan[0]){G.retPlan.shift();await returnEvent(E,G.cfg.extraN,'¡Repechaje!')}
+}
+function shouldMerge(){if(G.merged)return false;return (G.cfg.mergeAt>0&&alive().length<=G.cfg.mergeAt)||(liveTeams().length<=1&&!G.race)}
+async function doMerge(E){
+  G.merged=true;G.race=false;alive().forEach(c=>c.madeMerge=true);
+  const b=await sec(E,'¡Fusión!','spec');
+  hline(b,`${H()} disuelve los equipos. Quedan ${alive().length}: desde ahora es cada uno por su cuenta y la inmunidad es individual.`);
+  line(b,alive().length<=6?alive():[],'Las viejas lealtades de equipo se ponen a prueba: los que antes eran rivales ahora pueden ser aliados.');
+  const als=actAl();
+  if(als.length>=2&&Math.random()<(L()?.5:.3)){const [x,y]=als;const lx=alLeader(x),ly=alLeader(y);if(lx&&ly&&(L()?rel(lx,ly)>0:Math.random()<.5)){const mem=[...x.mem,...y.mem].map(byIdG).filter(c=>c&&c.alive);if(mem.length<=alCap()+1){y.mem.slice().forEach(id=>{const c=byIdG(id);if(c)joinAl(x,c)});line(b,[lx,ly],`${nm(lx)} y ${nm(ly)} unen fuerzas: ${alH(y)} se fusiona con ${alH(x)}.`,'big');note([lx,ly],`${alH(x)} absorbió a otra alianza en la fusión.`)}}}
+  note([],'Los equipos se fusionaron.');
+}
+async function teamBalance(E){
+  if(G.merged||G.race)return;
+  const lt=liveTeams();if(lt.length<2)return;
+  const sz=i=>teamOf(i).length;
+  const sorted=[...lt].sort((a,b)=>sz(a)-sz(b));
+  const small=sorted[0],big=sorted[sorted.length-1];
+  const restAvg=sorted.slice(1).reduce((t,i)=>t+sz(i),0)/(sorted.length-1);
+  if(lt.length>2&&(sz(small)<=2||sz(small)<=restAvg*.45)){
+    const b=await sec(E,'¡Equipo disuelto!','spec');
+    const mem=shuffle(teamOf(small));const others=sorted.slice(1);const nmT=teamName(small);
+    hline(b,`A ${nmT} le quedan muy pocos integrantes, así que ${H()} disuelve el equipo y reparte a sus miembros entre los demás.`);
+    mem.forEach(c=>{const dest=[...others].sort((a,b)=>sz(a)-sz(b))[0];setTeam(c,dest);line(b,[c],`${nm(c)} pasa a ${teamName(dest)}.`)});
+    note([],`${nmT} se disolvió y sus integrantes se repartieron.`);return;
+  }
+  if(!G.cfg.swaps)return;
+  const diff=sz(big)-sz(small);
+  if(diff>=3||(diff===2&&Math.random()<.5)){
+    const n=Math.floor(diff/2);
+    const b=await sec(E,'¡Cambio de equipos!','spec');
+    hline(b,`${teamName(big)} tiene ${sz(big)} integrantes y ${teamName(small)} apenas ${sz(small)}. Para equilibrar, ${H()} manda ${n===1?'a uno':'a '+n} de un equipo al otro.`);
+    for(let k=0;k<n;k++){const m=teamOf(big);const mv=L()?m.reduce((p,c)=>{const s=m.reduce((t,o)=>t+(o!==c?rel(c,o):0),0);return !p||s<p.s?{c,s}:p},null).c:pick(m);setTeam(mv,small);
+      line(b,[mv],L()?`${nm(mv)}, quien peor se llevaba con su equipo, pasa a ${teamName(small)}.`:`${nm(mv)} pasa a ${teamName(small)}.`,'big');note([mv],`${nm(mv)} cambió de equipo.`)}
+    G.lastSwap=E.n;return;
+  }
+  if(E.n>=3&&E.n-G.lastSwap>=3&&Math.random()<.15){
+    const [a,c]=shuffle(lt);const A=teamOf(a),C=teamOf(c);if(A.length<2||C.length<2)return;
+    const x=pick(A),y=pick(C);setTeam(x,c);setTeam(y,a);G.lastSwap=E.n;
+    const b=await sec(E,'¡Intercambio!','spec');
+    hline(b,`${H()} anuncia un intercambio: un integrante de ${teamName(a)} pasa a ${teamName(c)} y viceversa.`);
+    line(b,[x,y],fmt('{A} y {B} cambian de equipo. Las caras de sus viejos compañeros lo dicen todo.',x,y),'big');note([x,y],fmt('{A} y {B} intercambiaron equipos.',x,y));
+  }
+}
+function others(P,sameTeam){let o=alive().filter(c=>c!==P);if(sameTeam&&!G.merged){const s=o.filter(c=>c.team===P.team);if(s.length)o=s}return o}
+
+/* ================= EVENTOS ENTRE PARTICIPANTES ================= */
+const EV={
+solo:(b,a)=>{line(b,[a],fmt(pick(SOLO),a));return true},
+pos:(b,a,x)=>{addRel(a,x,rnd(8,18));line(b,[a,x],fmt(pick(POS),a,x));checkBff(b,a,x);return true},
+neg:(b,a,x)=>{addRel(a,x,-rnd(8,20));line(b,[a,x],fmt(pick(NEG),a,x),'bad');checkRival(b,a,x);return true},
+trio:(b,a,x)=>{const c=pick(alive().filter(y=>y!==a&&y!==x));if(!c)return false;const r=Math.random();
+  if(r<.34){addRel(a,x,5);addRel(x,c,-15);line(b,[a,x,c],fmt('{A} le dice a {B} que no confíe en {C}. La semilla de la duda está plantada.',a,x,c));return true}
+  if(r<.67){addRel(a,x,6);addRel(c,a,-10);addRel(c,x,-10);line(b,[a,x,c],fmt('{A} y {B} se burlan de {C} a sus espaldas… y {C} los escucha.',a,x,c),'bad');return true}
+  addRel(a,x,6);addRel(a,c,6);addRel(x,c,6);line(b,[a,x,c],fmt(pick(TRIO_POS),a,x,c));return true},
+romance:(b,a,x)=>{const r=romFind(a,x);
+  if(!r){if(!free(a)||!free(x)){return EV.triangle(b,a,x)}G.rom.push({a:a.id,b:x.id,st:'crush'});addRel(a,x,8);line(b,[a,x],fmt(pick(['En el confesionario, {A} admite que siente algo por {B}.','{A} no puede dejar de mirar a {B} durante la cena.','{A} le escribe un poema a {B}, pero no se anima a dárselo.']),a,x));return true}
+  if(r.st==='crush'){if(L()?rel(a,x)+rnd(0,30)>55:Math.random()<.5){r.st='pareja';addRel(a,x,20);line(b,[a,x],fmt(pick(['¡{A} y {B} se besan en el muelle! Nace un nuevo romance.','{A} invita a {B} a una cena a la luz de las velas (con comida de Chef). Termina en beso.','Bajo los fuegos artificiales de Chris, {A} y {B} se dan su primer beso.']),a,x),'big');note([a,x],fmt('{A} y {B} empezaron un romance.',a,x));return true}
+    if(Math.random()<.4){r.st='ex';addRel(a,x,-12);line(b,[a,x],fmt('{A} se declara a {B}… y {B} le dice que solo lo ve como amigo. Incómodo.',a,x),'bad');return true}
+    addRel(a,x,6);line(b,[a,x],fmt('{A} intenta invitar a salir a {B}, pero se traba con las palabras y termina hablando del clima.',a,x));return true}
+  if(r.st==='pareja'){
+    if(L()?rel(a,x)<10&&Math.random()<.6:Math.random()<.2){r.st='ex';addRel(a,x,-30);line(b,[a,x],fmt(pick(['{A} corta con {B} frente a todo el campamento.','Después de una pelea enorme, {A} y {B} terminan su relación.']),a,x),'big bad');note([a,x],fmt('{A} y {B} se separaron.',a,x));return true}
+    if(Math.random()<(L()?.35:.5)){addRel(a,x,-14);line(b,[a,x],fmt(pick(['{A} y {B} tienen su primera gran pelea de pareja.','{A} se pone celoso porque {B} pasa mucho tiempo con otros.','{A} y {B} discuten sobre si la alianza está antes que la pareja.']),a,x),'bad');return true}
+    addRel(a,x,10);line(b,[a,x],fmt(pick(['{A} y {B} son inseparables. Hasta Chef los mira con ternura.','{A} le regala a {B} una flor del bosque.','{A} y {B} prometen cuidarse en las votaciones.']),a,x));return true}
+  addRel(a,x,-4);line(b,[a,x],fmt('Entre {A} y {B} quedó todo raro desde lo que pasó. Se evitan en el comedor.',a,x));return true},
+triangle:(b,a,x)=>{const px=partnerOf(x);if(!px||px===a)return false;addRel(px,a,-20);addRel(x,a,6);line(b,[a,x,px],fmt('{A} coquetea con {B} delante de {C}. Se viene un triángulo amoroso.',a,x,px),'bad');checkRival(b,a,px);return true},
+rival:(b,a,x)=>{if(L()&&Math.random()<.12&&rel(a,x)>-70){addRel(a,x,35);G.rivals.delete(key(a.id,x.id));line(b,[a,x],fmt('Contra todo pronóstico, {A} y {B} hacen las paces junto a la fogata.',a,x),'big');note([a,x],fmt('{A} y {B} hicieron las paces.',a,x));return true}
+  addRel(a,x,-10);line(b,[a,x],fmt(pick(PRANK),a,x),'bad');if(Math.random()<.5){line(b,[x,a],fmt('{A} jura venganza contra {B}.',x,a),'bad')}return true},
+alliance:(b,a,x)=>{if(a===me()||x===me())return false;const al=allyOf(a);
+  if(al&&al.mem.includes(x.id)){const r=Math.random();const mem=al.mem.map(byIdG).filter(Boolean);
+    if(r<.35){mem.forEach(m=>mem.forEach(n=>{if(m!==n)addRel(m,n,2)}));line(b,mem.length<=6?mem:[a,x],`La alianza ${alH(al)} se reúne en secreto detrás de la cabaña de Chef.`);return true}
+    if(r<.7){const opts=alive().filter(c=>!al.mem.includes(c.id));if(!opts.length)return false;const t=L()?opts.reduce((p,c)=>(threat(c)-rel(a,c))>(threat(p)-rel(a,p))?c:p):pick(opts);al.target=t.id;line(b,[a,t],`${nm(a)} convence a ${alH(al)} de ir contra ${nm(t)} en la próxima votación.`);alLog(al,`Apuntan contra ${t.n}.`);
+      const spy=pick(alive().filter(c=>!al.mem.includes(c.id)&&c!==t));if(spy&&Math.random()<.3){addRel(spy,t,10);mem.forEach(m=>addRel(t,m,-12));line(b,[spy,t],fmt(`{A} escucha el plan de ${alH(al)} y se lo cuenta a {B}.`,spy,t));note([t],`${nm(t)} descubrió que ${alH(al)} la quiere afuera.`)}return true}
+    const weak=mem.reduce((p,c)=>{const s=mem.reduce((t,o)=>t+(o!==c?rel(c,o):0),0);return !p||s<p.s?{c,s}:p},null);
+    if(weak&&weak.c!==me()&&(L()?weak.s/(mem.length-1)<-5:Math.random()<.4)){leaveAl(al,weak.c,'abandona la alianza: ya no confía en nadie');line(b,[weak.c],`${nm(weak.c)} se va de ${alH(al)}: dice que ahí ya no confía en nadie.`,'bad');note([weak.c],`${nm(weak.c)} abandonó ${alH(al)}.`);return true}
+    line(b,[a,x],`${nm(a)} y ${nm(x)} repasan los números de ${alH(al)}. Por ahora, todo bajo control.`);return true}
+  if(al&&al.mem.length>=alCap())return false;
+  if(L()&&(a.s[3]<4||rel(a,x)<5))return false;
+  if(accepts(x,a)){const n=allianceDeal(a,x);line(b,[a,x],`${nm(a)} le propone a ${nm(x)} unirse a ${alH(n)}, y acepta.`);if(n.mem.length===2)note([a,x],`${nm(a)} y ${nm(x)} formaron la alianza ${alH(n)}.`);return true}
+  addRel(a,x,-5);line(b,[a,x],fmt('{A} le propone una alianza a {B}, pero {B} se niega.',a,x),'bad');return true},
+adv:(b,a)=>{if(a===me()||!canGiveAdv())return false;const t=giveAdv(a);line(b,[a],fmt(`{A} encuentra un tótem escondido en un tronco hueco y lo guarda sin decir nada${advTxt(a,t)}.`,a));return true},
+injury:(b,a)=>{a.debuff=true;line(b,[a],fmt(pick(['{A} se tuerce el tobillo persiguiendo una gallina. Va a competir con dolor.','{A} se intoxica con la comida de Chef y pasa la noche en la enfermería.','{A} es picado por una abeja en la nariz. No ve nada.']),a),'bad');return true},
+chef:(b,a)=>{const r=Math.random();if(r<.5){a.debuff=true;line(b,[HOSTS.chef,a],fmt('Chef obliga a {A} a lavar los platos de todo el campamento. Llega agotado al desafío.',a))}else{a.s[0]=Math.min(10,a.s[0]+.3);line(b,[HOSTS.chef,a],fmt('Chef somete a {A} a un entrenamiento militar al amanecer. Sobrevive… y sale más fuerte.',a))}return true},
+advtrade:(b,a,x)=>{if(a===me()||!a.adv.length)return false;
+  const close=allied(a,x)||isCouple(a,x)||rel(a,x)>45;
+  if(x.adv.length&&Math.random()<.35){const t1=a.adv.pop(),t2=x.adv.pop();recvAdv(a,t2);recvAdv(x,t1);addRel(a,x,8);line(b,[a,x],fmt('{A} y {B} se intercambian sus ventajas en secreto.',a,x)+(G.player?'':` (${ADV[t1]} por ${ADV[t2]})`));return true}
+  if(close&&Math.random()<.5){const t=a.adv.pop();recvAdv(x,t);addRel(a,x,20);line(b,[a,x],fmt('{A} le regala su ventaja a {B} para protegerlo',a,x)+((!G.player||x===me())?`: ${advLabel(x,t)}.`:'.'),'big');note([a,x],fmt('{A} le pasó una ventaja a {B}.',a,x));return true}
+  if(!allied(a,x)&&accepts(x,a)){const t=a.adv.pop();recvAdv(x,t);const al=allianceDeal(x,a);line(b,[a,x],`${nm(a)} le ofrece su ventaja a ${nm(x)} a cambio de entrar en ${alH(al)}. Trato hecho.`);return true}
+  addRel(a,x,6);line(b,[a,x],fmt('{A} le cuenta a {B} que tiene una ventaja. ¿Muestra de confianza o error?',a,x));return true},
+fake:(b,a,x)=>{if(a===me()||G.cfg.adv<=0||G.advExpired||alive().filter(c=>c.adv.includes('falsa')).length>=2)return false;
+  const t=L()?alive().filter(c=>c!==a&&!allied(a,c)).reduce((p,c)=>!p||rel(a,c)<rel(a,p)?c:p,null):x;if(!t||t===a)return false;
+  recvAdv(t,'falsa');G.fakes[t.id]=a.id;
+  if(t===me())line(b,[t],fmt('{A} encuentra una Estatuilla de inmunidad escondida en un tronco. ¡Qué suerte!',t),'big');
+  else{line(b,[a],fmt(pick(['{A} talla una estatuilla falsa con un pedazo de madera y la pinta con barro.','{A} fabrica una estatuilla de inmunidad falsa con una piña y pegamento.']),a));line(b,[a,t],fmt('{A} la esconde justo donde {B} la va a encontrar. Y {B} la encuentra, feliz.',a,t),'bad');note([a,t],fmt('{A} le plantó una estatuilla falsa a {B}.',a,t))}
+  return true},
+host:(b,a)=>{line(b,[HOST(),a],fmt(pick([`${H()} le pide a {A} que le haga masajes en los pies. Por "el bien del programa".`,`${H()} usa a {A} para probar un desafío nuevo. Termina en el lago.`,`${H()} entrevista a {A} en exclusiva y le hace decir cosas que después muestra a todos.`]),a));if(Math.random()<.4)others(a).slice(0,3).forEach(o=>addRel(o,a,-4));return true}
+};
+function checkBff(b,a,x){const k=key(a.id,x.id);if(rel(a,x)>65&&!G.bff.has(k)&&!isCouple(a,x)){G.bff.add(k);line(b,[a,x],fmt('{A} y {B} ya son oficialmente mejores amigos.',a,x),'big');note([a,x],fmt('{A} y {B} se volvieron mejores amigos.',a,x))}}
+function checkRival(b,a,x){const k=key(a.id,x.id);if(rel(a,x)<-50&&!G.rivals.has(k)){G.rivals.add(k);G.bff.delete(k);line(b,[a,x],fmt('La rivalidad entre {A} y {B} ya es oficial: no se pueden ni ver.',a,x),'bad');note([a,x],fmt('{A} y {B} se declararon la guerra.',a,x))}}
+async function npcEvent(b,P){
+  const pool=alive();const a=pick(pool.filter(c=>c!==P).length?pool.filter(c=>c!==P):pool);
+  let cand=pool.filter(c=>c!==a);
+  if(!cand.length)return EV.solo(b,a);
+  if(!G.merged&&Math.random()<.7){const s=cand.filter(c=>c.team===a.team);if(s.length)cand=s}
+  let x;
+  if(L()){x=wpick(cand.map(c=>[c,8+Math.abs(rel(a,c))+(allied(a,c)?15:0)+(isCouple(a,c)?25:0)]))}else x=pick(cand);
+  const r=rel(a,x),rom=romFind(a,x),ar=arch(a);
+  let type;
+  if(L())type=wpick([['solo',1],['pos',r>20?4:r>-10?2:.4],['neg',(r<-20?4:r<10?1.5:.3)*(ar==='villano'?1.6:1)],['trio',1],['romance',rom?(rom.st==='ex'?.5:2.2):(r>30&&free(a)&&free(x)?1.2:(partnerOf(x)&&r>20?.3:0))],['rival',G.rivals.has(key(a.id,x.id))?2.5:0],['alliance',(a.s[3]/5)*(allyOf(a)?1.4:(r>15?1.5:.4))],['adv',canGiveAdv()?.35*G.cfg.adv:0],['advtrade',a.adv.length?(allied(a,x)||isCouple(a,x)||r>45?2.2:.6):0],['fake',G.cfg.adv>0&&a.s[3]>=7&&(ar==='villano'||ar==='estratega')?.4:0],['injury',.12],['chef',.3],['host',.2]]);
+  else type=wpick([['solo',1],['pos',1.5],['neg',1.5],['trio',1],['romance',1],['rival',.7],['alliance',1.5],['adv',canGiveAdv()?.5*G.cfg.adv:0],['advtrade',a.adv.length?1.2:0],['fake',G.cfg.adv>0?.3:0],['injury',.3],['chef',.4],['host',.3]]);
+  if(!EV[type](b,a,x))EV[r>=0?'pos':'neg'](b,a,x);
+}
+function allianceUpkeep(b){
+  for(const c of alive()){if(c===me()||!c.adv.includes('falsa'))continue;if(c.s[1]>=7&&Math.random()<(L()?.3:.15)){c.adv.splice(c.adv.indexOf('falsa'),1);const pl=byIdG(G.fakes[c.id]);if(pl&&Math.random()<.5){addRel(c,pl,-30);line(b,[c,pl],fmt('{A} examina su estatuilla y descubre que es falsa. Y sabe muy bien quién se la plantó: {B}.',c,pl),'bad');checkRival(b,c,pl)}else line(b,[c],fmt('{A} examina su estatuilla con lupa y descubre que es falsa. La tira al lago.',c),'bad')}}
+  for(const al of actAl()){
+    const mem=al.mem.map(byIdG).filter(c=>c&&c.alive);
+    if(L()){for(const c of mem){if(c===me())continue;const avg=mem.reduce((t,o)=>t+(o!==c?rel(c,o):0),0)/Math.max(1,mem.length-1);if(avg<-15){leaveAl(al,c,'rompe con la alianza');line(b,[c],`${nm(c)} rompe con ${alH(al)}: la convivencia se volvió insoportable.`,'bad');note([c],`${nm(c)} rompió con ${alH(al)}.`);break}}}
+    else if(Math.random()<.12&&mem.length){const c=pick(mem);if(c!==me()){leaveAl(al,c,'se va sin dar explicaciones');line(b,[c],`${nm(c)} abandona ${alH(al)} de un día para el otro.`,'bad')}}
+  }
+}
+
+/* ================= DILEMAS DEL JUGADOR ================= */
+const DILEMMAS=[
+async(P,b)=>{const o=others(P,true);if(o.length<2)return false;const B=pick(o),C=pick(o.filter(x=>x!==B));
+  const v=await ask(`${B.n} te cuenta en voz baja que ${C.n} quiere votarte. ¿Qué hacés?`,[{v:'enf',label:'Enfrentar a '+C.n,hint:'Se arma una pelea'},{v:'cont',label:'Contárselo a todos',hint:C.n+' queda mal parado'},{v:'pacto',label:'Proponerle un pacto a '+C.n,hint:'Puede salir bien… o no'},{v:'nada',label:'Hacerte el distraído',hint:'Por ahora, nada'}]);
+  if(v==='enf'){addRel(P,C,-22);addRel(P,B,6);line(b,[P,C],fmt('{A} enfrenta a {B} delante de todos. Los gritos se escuchan hasta el muelle.',P,C),'bad');checkRival(b,P,C)}
+  if(v==='cont'){others(P).forEach(x=>{if(x!==C)addRel(x,C,-6)});addRel(P,C,-15);addRel(B,P,-6);line(b,[P,C],fmt('{A} cuenta en la fogata que {B} quería votarle. Ahora todos miran raro a {B}… y {C} se siente expuesto.',P,C,B))}
+  if(v==='pacto'){if(accepts(C,P)){const al=allianceDeal(P,C);addRel(P,C,12);line(b,[P,C],`${nm(P)} habla a solas con ${nm(C)} y terminan juntos en ${alH(al)}. ¿Durará?`)}else{addRel(P,C,-10);line(b,[P,C],fmt('{A} intenta pactar con {B}, que se ríe en su cara.',P,C),'bad')}}
+  if(v==='nada'){P.lowkey=true;line(b,[P],fmt('{A} sonríe como si nada. En el confesionario admite que está tomando nota.',P))}
+  return true},
+async(P,b)=>{const B=pick(others(P));if(!B)return false;
+  const v=await ask(`Encontrás el diario íntimo de ${B.n} tirado en el bosque.`,[{v:'dev',label:'Devolverlo sin leer',hint:'Gana confianza'},{v:'leer',label:'Leerlo a escondidas',hint:'Podrías descubrir algo… o que te descubran'},{v:'voz',label:'Leerlo en voz alta en la fogata',hint:'Risas para todos, enemigo para siempre'}]);
+  if(v==='dev'){addRel(P,B,22);line(b,[P,B],fmt('{A} le devuelve el diario a {B} sin abrirlo. {B} no lo puede creer.',P,B))}
+  if(v==='leer'){if(Math.random()<.3){addRel(P,B,-35);line(b,[P,B],fmt('{B} encuentra a {A} con su diario en la mano. Escándalo total.',P,B),'bad')}else{const r=worstRival(B);const al=allyOf(B);line(b,[P],`${nm(P)} descubre que ${nm(B)} no soporta a ${r?nm(r):'nadie en especial'}${al?' y que está en la alianza '+alH(al):''}. Información valiosa.`)}}
+  if(v==='voz'){addRel(P,B,-40);others(P).forEach(x=>{if(x!==B&&rel(x,B)<0)addRel(x,P,6)});line(b,[P,B],fmt('{A} lee el diario de {B} frente a todos. Algunos se ríen; {B} jura venganza.',P,B),'bad');checkRival(b,P,B)}
+  return true},
+async(P,b)=>{
+  const v=await ask('Chef te para en la cocina y te pide ayuda con la cena.',[{v:'ay',label:'Ayudarlo',hint:'Quizás te deba un favor'},{v:'rob',label:'Robar comida para tu grupo',hint:'Tus compañeros te van a querer más'},{v:'no',label:'Inventar una excusa',hint:'Nada cambia'}]);
+  if(v==='ay'){if(canGiveAdv()&&Math.random()<.4*G.cfg.adv+.1){const t=giveAdv(P);line(b,[HOSTS.chef,P],fmt(`{A} ayuda a Chef toda la tarde. Al final, Chef le pasa un sobre: adentro hay esto: ${ADV[t]}.`,P),'big')}else{P.s[0]=Math.min(10,P.s[0]+.3);line(b,[HOSTS.chef,P],fmt('{A} pela 200 papas con Chef. No gana nada, salvo brazos más fuertes.',P))}}
+  if(v==='rob'){others(P,true).slice(0,6).forEach(x=>addRel(x,P,7));if(Math.random()<.3){P.debuff=true;line(b,[P],fmt('Chef descubre a {A} con las manos en la masa y le hace lavar ollas toda la noche.',P),'bad')}else line(b,[P],fmt('{A} vuelve a la cabaña con pastel robado. Es el héroe de la noche.',P))}
+  if(v==='no')line(b,[P],fmt('{A} inventa que tiene alergia a las papas y se escapa.',P));
+  return true},
+async(P,b)=>{const o=others(P);if(o.length<2)return false;const B=pick(o),C=pick(o.filter(x=>x!==B));
+  const v=await ask(`${B.n} y ${C.n} se están peleando a los gritos frente a la cabaña.`,[{v:'b',label:'Defender a '+B.n},{v:'c',label:'Defender a '+C.n},{v:'calma',label:'Calmar a los dos',hint:'Depende de tu habilidad social'},{v:'mirar',label:'Mirar con pochoclos'}]);
+  addRel(B,C,-12);
+  if(v==='b'){addRel(P,B,15);addRel(P,C,-15);line(b,[P,B,C],fmt('{A} se pone del lado de {B}. {C} no se lo va a olvidar.',P,B,C))}
+  if(v==='c'){addRel(P,C,15);addRel(P,B,-15);line(b,[P,C,B],fmt('{A} se pone del lado de {B}. {C} no se lo va a olvidar.',P,C,B))}
+  if(v==='calma'){if(P.s[2]+rnd(0,6)>8){addRel(P,B,8);addRel(P,C,8);addRel(B,C,10);line(b,[P,B,C],fmt('{A} logra que {B} y {C} se den la mano. Diplomacia pura.',P,B,C))}else{addRel(P,B,-5);addRel(P,C,-5);line(b,[P,B,C],fmt('{A} intenta mediar y termina con {B} y {C} enojados con su persona.',P,B,C),'bad')}}
+  if(v==='mirar')line(b,[P,B,C],fmt('{A} se sienta a mirar cómo {B} y {C} se gritan. Mejor que la tele.',P,B,C));
+  return true},
+async(P,b)=>{if(G.cfg.adv<=0||G.advExpired)return false;
+  const v=await yesNo(`${H()} te ofrece un sobre misterioso… a cambio de pasar la noche durmiendo en el bosque.`,'Aceptar el trato','Rechazarlo','Ganás una ventaja, pero llegás cansado al desafío','Dormís tranquilo');
+  if(v){const t=giveAdv(P);P.debuff=true;line(b,[HOST(),P],fmt(`{A} pasa la noche entre mosquitos. A la mañana abre el sobre: ¡${ADV[t]}!`,P),'big')}
+  else line(b,[P],fmt('{A} rechaza el trato. Nunca sabrá qué había en el sobre.',P));
+  return true},
+async(P,b)=>{const B=pick(others(P,true));if(!B)return false;
+  const v=await yesNo(`${B.n} te pide ayuda para practicar para el próximo desafío.`,'Ayudar','Decir que no','Mejora la relación y su rendimiento','Te ahorrás el esfuerzo');
+  if(v){addRel(P,B,16);B.s[0]=Math.min(10,B.s[0]+.3);line(b,[P,B],fmt('{A} entrena con {B} hasta el atardecer.',P,B));checkBff(b,P,B)}else{addRel(P,B,-8);line(b,[P,B],fmt('{A} le dice que no a {B}, que se va bastante ofendido.',P,B))}
+  return true},
+async(P,b)=>{const hold=others(P).filter(c=>c.adv.length);const B=hold.length&&Math.random()<.7?pick(hold):pick(others(P));if(!B)return false;
+  const v=await ask(`Ves a ${B.n} escondiendo algo cerca del muelle.`,[{v:'inv',label:'Investigar cuando no mire',hint:'Si es una ventaja, podrías quedártela'},{v:'av',label:'Avisarle a los demás',hint:'Se vuelve sospechoso'},{v:'no',label:'No meterte'}]);
+  if(v==='inv'){if(B.adv.length&&Math.random()<.55){const t=B.adv.pop();recvAdv(P,t);if(Math.random()<.4){addRel(P,B,-40);line(b,[P,B],fmt(`{A} encuentra el escondite de {B} y se queda con su ventaja (${advLabel(P,t)})… pero {B} lo ve todo.`,P,B),'big bad')}else line(b,[P,B],fmt(`{A} encuentra el escondite de {B} y se queda con su ventaja (${advLabel(P,t)}). Nadie lo vio.`,P,B),'big')}else line(b,[P,B],fmt('{A} revuelve el muelle y solo encuentra una lata de porotos.',P,B))}
+  if(v==='av'){others(P).forEach(x=>{if(x!==B)addRel(x,B,-5)});line(b,[P,B],fmt('{A} avisa que {B} esconde algo. Todos empiezan a desconfiar de {B}.',P,B))}
+  if(v==='no')line(b,[P],fmt('{A} decide que no es asunto suyo.',P));
+  return true},
+async(P,b)=>{const c=others(P).filter(x=>rel(P,x)>25&&free(x)&&free(P));if(!c.length)return false;const B=pick(c);
+  const v=await yesNo(`${B.n} te invita a ver el atardecer en el muelle.`,'Ir','Rechazar amablemente','Puede nacer un romance','Mejor no complicarse');
+  if(v){if(rel(P,B)+rnd(0,40)>50){G.rom.push({a:P.id,b:B.id,st:'pareja'});addRel(P,B,25);line(b,[P,B],fmt('¡{A} y {B} se besan en el muelle! El campamento entero habla de lo mismo.',P,B),'big');note([P,B],fmt('{A} y {B} empezaron un romance.',P,B))}else{addRel(P,B,10);G.rom.push({a:P.id,b:B.id,st:'crush'});line(b,[P,B],fmt('{A} y {B} charlan hasta que se pone el sol. Hay algo, pero nadie se anima.',P,B))}}
+  else{addRel(P,B,-4);line(b,[P,B],fmt('{A} le dice a {B} que prefiere concentrarse en el juego.',P,B))}
+  return true},
+async(P,b)=>{const als=actAl().filter(al=>!al.mem.includes(P.id)&&al.mem.length<alCap());if(!als.length)return false;const al=pick(als);const lead=alLeader(al);if(!lead)return false;
+  const mine=allyOf(P);
+  const v=await yesNo(`${lead.n} te invita en secreto a la alianza «${al.name}» (${al.mem.map(i=>byIdG(i).n).join(', ')}).${mine?` Tendrías que dejar «${mine.name}».`:''}`,'Aceptar','Rechazar',mine?'Si te vas, tus viejos aliados se van a enterar':'Más protección en las votaciones','Seguís como estás');
+  if(v){if(mine){mine.mem.map(byIdG).forEach(m=>{if(m&&m!==P)addRel(m,P,-25)})}joinAl(al,P);al.mem.map(byIdG).forEach(m=>addRel(m,P,8));line(b,[lead,P],`${nm(P)} se suma a ${alH(al)}.${mine?' Sus viejos aliados lo toman como una traición.':''}`,'big');note([P],`${nm(P)} se unió a ${alH(al)}.`)}
+  else{addRel(lead,P,-8);line(b,[lead,P],`${nm(P)} rechaza la invitación de ${alH(al)}. ${nm(lead)} toma nota.`)}
+  return true},
+async(P,b)=>{if(G.cfg.adv<=0||G.advExpired)return false;
+  const v=await yesNo('Encontrás un pedazo de madera con forma de estatuilla. Pintado, podría pasar por una Estatuilla de inmunidad.','Fabricar una falsa','Dejarlo','Se la plantás a alguien y la va a usar sin saber que no sirve','No te metés en problemas');
+  if(!v){line(b,[P],fmt('{A} tira el pedazo de madera al lago.',P));return true}
+  const t=await chooseTarget('¿A quién se la plantás?',others(P),relHint);
+  recvAdv(t,'falsa');G.fakes[t.id]=P.id;line(b,[P,t],fmt('{A} fabrica una estatuilla falsa y la esconde donde {B} la va a encontrar. {B} cae en la trampa.',P,t),'big');
+  if(t.s[1]>=8&&Math.random()<.35){t.adv.splice(t.adv.indexOf('falsa'),1);addRel(t,P,-30);line(b,[t,P],fmt('{A} se da cuenta enseguida de que es falsa… y sospecha de {B}.',t,P),'bad')}
+  return true},
+async(P,b)=>{if(!P.adv.length)return false;const al=allyOf(P);const cand=[...(al?al.mem.map(byIdG):[]),partnerOf(P)].filter(c=>c&&c!==P&&c.alive);if(!cand.length)return false;const B=pick(cand);const t=P.adv[0];
+  const v=await ask(`${B.n} sabe que tenés ${advLabel(P,t)} y te pide que se la des: tiene miedo de quedar eliminado.`,[{v:'dar',label:'Dársela',hint:'Gran gesto de lealtad'},{v:'cambio',label:'Pedir algo a cambio',hint:'Que te prometa no votarte nunca'},{v:'no',label:'Negarte',hint:'Te la guardás'}]);
+  if(v==='dar'){P.adv.shift();recvAdv(B,t);addRel(P,B,25);line(b,[P,B],fmt('{A} le da su ventaja a {B}. {B} lo abraza emocionado.',P,B),'big')}
+  if(v==='cambio'){if(accepts(B,P)){P.adv.shift();recvAdv(B,t);addRel(P,B,12);B.owes=P.id;line(b,[P,B],fmt('{A} le da su ventaja a {B} a cambio de que nunca le vote. Trato cerrado.',P,B))}else{addRel(P,B,-8);line(b,[P,B],fmt('{B} se ofende: "¿Me cobrás por ayudarme?"',P,B),'bad')}}
+  if(v==='no'){addRel(P,B,-12);line(b,[P,B],fmt('{A} le dice que no a {B}. La confianza se resiente.',P,B),'bad')}
+  return true},
+async(P,b)=>{const al=allyOf(P);if(!al)return false;const opts=al.mem.map(byIdG).filter(c=>c&&c!==P);if(!opts.length)return false;const B=pick(opts);
+  const v=await ask(`${B.n}, de tu alianza «${al.name}», te propone dejar afuera a alguien del grupo.`,[{v:'si',label:'Aceptar el plan',hint:'Se debilita la alianza, pero ganás un aliado fiel'},{v:'no',label:'Defender al grupo',hint:'La alianza se mantiene unida'},{v:'cont',label:'Contarle a la alianza',hint:B.n+' queda expuesto'}]);
+  if(v==='si'){addRel(P,B,12);const t=opts.find(c=>c!==B);if(t){addRel(P,t,-8);line(b,[P,B,t],fmt('{A} y {B} planean dejar afuera a {C}. Nadie más lo sabe.',P,B,t));al.target=null}else line(b,[P,B],fmt('{A} y {B} se juran lealtad entre ellos.',P,B))}
+  if(v==='no'){addRel(P,B,-6);opts.forEach(c=>{if(c!==B)addRel(P,c,6)});line(b,[P,B],`${nm(P)} se niega: ${alH(al)} va unida hasta el final.`)}
+  if(v==='cont'){opts.forEach(c=>{if(c!==B){addRel(c,B,-20);addRel(c,P,8)}});addRel(B,P,-30);if(al.mem.length>2){leaveAl(al,B,'es expulsado por conspirar');line(b,[P,B],`${nm(P)} cuenta todo y ${alH(al)} expulsa a ${nm(B)}.`,'big bad')}else line(b,[P,B],fmt('{A} cuenta todo. {B} lo niega a los gritos.',P,B),'bad')}
+  return true}
+];
+async function camp(E){
+  const b=await sec(E,'En el campamento');
+  const P=me();
+  if(playing()){
+    const a=await ask(`¿Qué hace ${P.n} en su tiempo libre?`,[
+      {v:'amigo',label:'Hacer amigos',hint:'Sube mucho la relación con alguien'},
+      {v:'alianza',label:allyOf(P)?'Sumar a alguien a tu alianza':'Proponer una alianza',hint:'Si acepta, se cuidan en las votaciones'},
+      {v:'sabotaje',label:'Sabotear a alguien',hint:'Le baja el rendimiento… si no te descubren'},
+      {v:'perfil',label:'Perfil bajo',hint:'Menos chances de recibir votos'},
+      ...(G.cfg.adv>0&&!G.advExpired?[{v:'buscar',label:'Buscar una ventaja',hint:'Hay ventajas escondidas en la isla'}]:[])]);
+    const os=others(P).sort((x,y)=>(y.team===P.team)-(x.team===P.team)||rel(P,y)-rel(P,x));
+    if(a==='amigo'){const t=await chooseTarget('¿Con quién?',os,relHint);addRel(P,t,rnd(15,28)*(0.6+P.s[2]/20));line(b,[P,t],fmt('{A} pasa la tarde con {B}. Se llevan cada vez mejor.',P,t));checkBff(b,P,t)}
+    if(a==='alianza'){const t=await chooseTarget('¿A quién?',os.filter(c=>!allied(P,c)),relHint);
+      if(accepts(t,P)){const al=allianceDeal(P,t);addRel(P,t,10);line(b,[P,t],`${nm(P)} le propone a ${nm(t)} sumarse a ${alH(al)}, y acepta.`)}
+      else{addRel(P,t,-6);line(b,[P,t],fmt('{A} le propone una alianza a {B}, pero {B} se niega.',P,t),'bad')}}
+    if(a==='sabotaje'){const t=await chooseTarget('¿A quién saboteás?',os,relHint);t.debuff=true;
+      if(Math.random()<0.25+t.s[1]/40){addRel(P,t,-35);alive().forEach(o=>{if(o!==t&&o!==P&&rel(o,t)>20)addRel(o,P,-10)});line(b,[P,t],fmt('{A} le esconde las zapatillas a {B}… y {B} lo descubre. Se arma un escándalo.',P,t),'bad');checkRival(b,P,t)}
+      else line(b,[P,t],fmt('{A} le esconde las zapatillas a {B}. Nadie se entera.',P,t))}
+    if(a==='perfil'){P.lowkey=true;line(b,[P],fmt('{A} se queda en la cabaña y evita los problemas.',P))}
+    if(a==='buscar'){if(advActive()<Math.max(1,Math.floor(alive().length/5))+1&&Math.random()<(0.2+P.s[1]/40)*Math.min(1.3,G.cfg.adv)){const t=giveAdv(P);line(b,[P],fmt(`¡{A} encuentra un tótem escondido en un tronco hueco! Adentro hay esto: ${ADV[t]}.`,P),'big')}else line(b,[P],fmt('{A} revuelve media isla, pero no encuentra nada. Alguien lo vio buscar…',P));if(Math.random()<.3)others(P).slice(0,3).forEach(o=>addRel(o,P,-3))}
+  }
+  const n=Math.min(10,4+Math.floor(alive().length/3));
+  for(let i=0;i<n;i++)await npcEvent(b,P);
+  if(playing()){const b2=await sec(E,'Un momento para decidir');for(const d of shuffle(DILEMMAS)){if(await d(P,b2))break}}
+  const b3=await sec(E,'Más tarde, en el campamento');
+  for(let i=0;i<Math.max(3,Math.floor(n/2));i++)await npcEvent(b3,P);
+  allianceUpkeep(b3);
+}
+async function confessional(E){
+  const cb=await sec(E,'Confesionario','conf');
+  const P=me();const speakers=shuffle(alive().filter(c=>c!==P)).slice(0,playing()?3:4);if(playing())speakers.unshift(P);
+  speakers.forEach(c=>line(cb,[c],`${nm(c)}: <q>${confQuote(c)}</q>`));
+}
+
+/* ================= DESAFÍOS ================= */
+function challengePool(){const k=G.se.ch;if(k==='carrera')return SPEC.carrera;if(k==='libre')return CLASSIC.concat(...Object.values(SPEC).filter(x=>x!==SPEC.carrera));return CLASSIC.concat(SPEC[k]||[])}
+const perfBase=(c,w)=>{const ws=w[0]+w[1]+w[2]||1;return (c.s[0]*w[0]+c.s[1]*w[1]+c.s[2]*w[2])/ws*10+rnd(0,noise(45))-(c.debuff?15:0)};
+async function rewardChallenge(E){
+  const [cn,w]=pick(REWARDS_CH);const R=pick(REWARDS);const W=w.split('').map(Number);
+  const b=await sec(E,'Desafío de recompensa: '+cn);
+  hline(b,`${H()}: "Hoy no se juega inmunidad, se juega ${R.n}."`);
+  const P=me();
+  if(!G.merged){
+    const lt=liveTeams();const rk=lt.map(i=>({i,v:teamOf(i).reduce((s,c)=>s+perfBase(c,W),0)/teamOf(i).length})).sort((x,y)=>y.v-x.v);
+    const wi=rk[0].i,wm=teamOf(wi);
+    const star=pick(wm);line(b,[star],fmt(pick(['{A} hace la jugada decisiva.','{A} se luce y deja a todos boquiabiertos.']),star));
+    line(b,wm.length<=6?wm:[],`${teamName(wi)} gana ${R.n}.`,'big');
+    for(let x=0;x<wm.length;x++)for(let y=x+1;y<wm.length;y++)addRel(wm[x],wm[y],3);
+    if(R.adv&&canGiveAdv()){const c=wm.reduce((a,c)=>c.s[1]>a.s[1]?c:a);const t=giveAdv(c);line(b,[c],fmt(`{A} sigue el mapa y encuentra la ventaja${advTxt(c,t)}.`,c))}
+    lt.filter(i=>i!==wi).forEach(i=>line(b,[],`<span>${teamName(i)} vuelve al campamento con hambre y envidia.</span>`));
+    return;
+  }
+  const sc=alive().map(c=>[c,perfBase(c,W)+(c===P&&playing()?5:0)]).sort((x,y)=>y[1]-x[1]);
+  const win=sc[0][0];line(b,[sc[sc.length-1][0]],fmt('{A} queda último lejos.',sc[sc.length-1][0]),'bad');
+  line(b,[win],fmt(`¡{A} gana ${R.n}!`,win),'big');
+  if(R.adv){if(canGiveAdv()){const t=giveAdv(win);line(b,[win],fmt(`{A} encuentra la ventaja escondida${advTxt(win,t)}.`,win))}else line(b,[win],fmt('{A} sigue el mapa… y la ventaja ya no estaba. Alguien llegó antes.',win));return}
+  const opts=alive().filter(c=>c!==win);const k=Math.min(2,opts.length);let comp;
+  if(win===P&&playing()){comp=[await chooseTarget(`¿A quién llevás a disfrutar ${R.n}?`,opts,relHint)];if(k>1){const o2=opts.filter(c=>c!==comp[0]);comp.push(await chooseTarget('¿Y a quién más?',o2,relHint))}}
+  else comp=L()?opts.sort((x,y)=>rel(win,y)-rel(win,x)).slice(0,k):shuffle(opts).slice(0,k);
+  comp.forEach(c=>addRel(win,c,14));opts.filter(c=>!comp.includes(c)).forEach(c=>addRel(c,win,-3));
+  line(b,[win,...comp],`${nm(win)} elige compartir la recompensa con ${comp.map(nm).join(' y ')}. El resto se queda mirando.`);
+  if(comp.length===2)addRel(comp[0],comp[1],8);
+}
+async function challenge(E,label){
+  const pool=challengePool().filter(c=>!G.used.slice(-10).includes(c.n));const C=pick(pool.length?pool:challengePool());G.used.push(C.n);
+  E.title=`${label||'Episodio '+E.n}: ${C.t}`;
+  const b=await sec(E,'Desafío de inmunidad: '+C.n);
+  hline(b,`${H()} explica el desafío: ${esc(C.d)}`);
+  if(E.noVote)hline(b,'¡Atención! Hoy no hay ceremonia: quien termine último queda eliminado en el acto.');
+  const P=me();let mode='seguro';const boosted=new Set();
+  for(const c of alive()){if(!hasAdv(c,'desafio'))continue;const u=(c===P&&playing())?await yesNo('¿Usás tu Ventaja para el desafío ahora?','Sí, usarla','No, guardarla',ADV_DESC.desafio):true;if(u){useAdv(c,'desafio');boosted.add(c);line(b,[c],fmt('{A} usa su Ventaja para el desafío y arranca varios pasos adelante.',c),'big')}}
+  if(playing()){
+    mode=await ask(`¿Cómo encara ${P.n} el desafío?`,[{v:'todo',label:'Darlo todo',hint:'Más puntaje, pero te podés lastimar'},{v:'seguro',label:'Jugar seguro',hint:'Rendimiento normal'},{v:'tirar',label:G.merged?'Dejarse perder':'Sabotear a tu equipo',hint:G.merged?'Parecer menos amenazante':'Tu equipo pierde puntos; si te descubren, te odian'}]);
+    if(mode==='todo'&&Math.random()<.15){P.hurt=true;line(b,[P],fmt('{A} arranca con todo… y se tuerce el tobillo en el calentamiento.',P),'bad')}
+    if(mode==='tirar'&&G.merged)P.lowkey=true;
+  }
+  const mod=c=>(boosted.has(c)?18:0)+(c===P&&playing()?(mode==='todo'?(P.hurt?-20:14):mode==='tirar'?-28:0):0);
+  const perf=(c,ph)=>perfBase(c,ph.w)+mod(c);
+  const narr=(group,sc,ph,solo)=>{
+    const s=[...group].sort((x,y)=>sc.get(y)-sc.get(x));const said=new Set();
+    if(!solo&&s.length){line(b,[s[0]],fmt(ph.g,s[0]));said.add(s[0])}
+    if(!solo&&s.length>1){const w=s[s.length-1];line(b,[w],fmt(ph.b,w),'bad');said.add(w)}
+    if(P&&group.includes(P)&&!said.has(P)){const avg=s.reduce((t,c)=>t+sc.get(c),0)/s.length;line(b,[P],fmt(sc.get(P)>=avg?ph.g:ph.b,P),sc.get(P)>=avg?'':'bad')}
+    if(L()&&s.length>2&&Math.random()<.25){const x=s[1],y=s[2];if(isCouple(x,y)||rel(x,y)>40)line(b,[x,y],fmt('{A} y {B} se ayudan como si fueran uno solo.',x,y));else if(rel(x,y)<-30){addRel(x,y,-6);line(b,[x,y],fmt('{A} y {B} se pelean en plena prueba y pierden tiempo.',x,y),'bad')}}
+  };
+  let out;
+  if(!G.merged){
+    const lt=liveTeams();const pts=new Map(lt.map(i=>[i,0]));const lastAvg=new Map();let aud=null;const allSc=new Map();
+    const scored=C.ph.filter(p=>p.m!=='aud').length;
+    for(const ph of C.ph){
+      if(C.ph.length>1)line(b,[],esc(ph.n),'phase');
+      const parts=new Map();const sc=new Map();
+      for(const i of lt){let m=teamOf(i);if(ph.m==='reps'){const k=Math.min(ph.k,m.length);if(k<m.length)m=await pickReps(b,i,m,k,ph,aud)}
+        parts.set(i,m);m.forEach(c=>{const v=perf(c,ph);sc.set(c,v);allSc.set(c,(allSc.get(c)||0)+v)})}
+      if(lt.length>4)narr([...parts.values()].flat(),sc,ph,false);else for(const i of lt)narr(parts.get(i),sc,ph,parts.get(i).length<2);
+      if(ph.m==='aud'){aud=sc;line(b,[],'Las audiciones terminan: cada equipo ya sabe quiénes son sus mejores cartas.');continue}
+      const rk=lt.map(i=>{const m=parts.get(i);return{i,v:m.reduce((s,c)=>s+sc.get(c),0)/m.length}}).sort((x,y)=>y.v-x.v);
+      rk.forEach((r,k)=>{pts.set(r.i,pts.get(r.i)+(lt.length-k));lastAvg.set(r.i,r.v)});
+      if(scored>1)line(b,[],`Gana la fase: ${teamName(rk[0].i)}.`);
+    }
+    const fin=lt.map(i=>({i,p:pts.get(i),v:lastAvg.get(i)||0})).sort((x,y)=>y.p-x.p||y.v-x.v);
+    const max=fin[0].p||1;
+    line(b,[],'Resultado del desafío','phase');
+    fin.forEach((t,k)=>{const T=G.teams[t.i];line(b,[],`<span style="flex:1;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>${k+1}º ${esc(T.name)}</b><span class="bar" style="--t:${T.color}"><i style="width:${Math.max(6,t.p/max*100)}%"></i></span></span>`)});
+    const W=fin[0].i,Lo=fin[fin.length-1].i;
+    teamOf(W).forEach(c=>c.wins++);
+    const wm=teamOf(W),lm=teamOf(Lo);
+    const mvp=wm.reduce((a,c)=>(allSc.get(c)||0)>(allSc.get(a)||0)?c:a);
+    line(b,[mvp],fmt('{A} es la figura del día.',mvp));
+    if(lm.length>1){const worst=lm.reduce((a,c)=>(allSc.get(c)??999)<(allSc.get(a)??999)?c:a);line(b,[worst],fmt('Su equipo señala a {A} como responsable de la derrota.',worst),'bad');lm.forEach(c=>{if(c!==worst)addRel(c,worst,-6)})}
+    if(P&&P.alive&&mode==='tirar'&&Math.random()<.4){teamOf(P.team).forEach(c=>addRel(c,P,-25));line(b,[P],fmt('Su equipo descubre que {A} saboteó el desafío. Están furiosos.',P),'bad')}
+    if(canGiveAdv()&&Math.random()<.15*G.cfg.adv){const t=giveAdv(mvp);line(b,[HOST(),mvp],fmt(`${H()} le da a {A} un sobre secreto por su actuación${advTxt(mvp,t)}.`,mvp),'big')}
+    G.lastWin=W;G.lastLose=Lo;
+    out={type:'team',loser:Lo,winner:W};
+  }else{
+    let rem=alive().slice();let firstSc=null;
+    for(let pi=0;pi<C.ph.length;pi++){const ph=C.ph[pi];
+      if(C.ph.length>1)line(b,[],esc(ph.n),'phase');
+      const sc=new Map();rem.forEach(c=>sc.set(c,perf(c,ph)));if(!firstSc)firstSc=new Map(sc);
+      narr(rem,sc,ph,false);
+      rem.sort((x,y)=>sc.get(y)-sc.get(x));
+      if(pi<C.ph.length-1&&rem.length>2){const keep=rem.slice(0,Math.ceil(rem.length/2));line(b,keep.length<=6?keep:[],`Pasan a la siguiente fase: ${keep.map(nm).join(', ')}.`);rem=keep}
+    }
+    line(b,[],'Resultado del desafío','phase');
+    rem.slice(0,3).forEach((c,k)=>line(b,[c],`${k+1}º ${nm(c)}`));
+    const w=rem[0];w.wins++;w.indWins++;
+    line(b,[w],fmt('¡{A} gana la inmunidad!',w),'big');
+    if(canGiveAdv()&&Math.random()<.08*G.cfg.adv){const t=giveAdv(w);line(b,[w],fmt(`Además, {A} recibe un sobre secreto${advTxt(w,t)}.`,w))}
+    out={type:'ind',immune:[w]};
+    if(E.noVote)out.last=alive().filter(c=>c!==w).sort((x,y)=>firstSc.get(x)-firstSc.get(y))[0];
+  }
+  if(P)P.hurt=false;
+  return out;
+}
+async function pickReps(b,i,m,k,ph,aud){
+  const P=me();const cap=m.reduce((a,c)=>c.s[3]+c.s[2]>a.s[3]+a.s[2]?c:a);
+  const w=ph.w,ws=w[0]+w[1]+w[2]||1;
+  const val=c=>!L()?Math.random():aud?aud.get(c)||0:(c.s[0]*w[0]+c.s[1]*w[1]+c.s[2]*w[2])/ws*10+rel(cap,c)/8+rnd(0,10);
+  const order=[...m].sort((x,y)=>val(y)-val(x));const chosen=order.slice(0,k);
+  if(playing()&&m.includes(P)){
+    const v=await yesNo(`${cap===P?'Sos quien elige: ':cap.n+' tiene que elegir '}${k} representante${k>1?'s':''} para "${ph.n}". ¿Te ponés en la lista?`,'Sí, me ofrezco','No, que vayan otros','Si te va bien, sos figura; si te va mal, sos el culpable','Te quedás mirando');
+    if(v&&!chosen.includes(P)){if(cap===P||rel(cap,P)>-30)chosen[chosen.length-1]=P;else line(b,[cap,P],fmt('{A} ignora a {B}: no confía en su desempeño.',cap,P),'bad')}
+    if(!v&&chosen.includes(P)){const alt=order.find(c=>!chosen.includes(c));if(alt)chosen[chosen.indexOf(P)]=alt;else line(b,[P],fmt('No queda otra: {A} tiene que salir igual.',P))}
+  }
+  if(G.teams.length<=4)line(b,chosen,`${nm(cap)} elige por ${teamName(i)}: ${chosen.map(nm).join(', ')}.`);
+  if(L()){const left=m.filter(c=>!chosen.includes(c)&&rel(cap,c)<-10);if(left.length&&Math.random()<.4){addRel(left[0],cap,-8);line(b,[left[0],cap],fmt('{A} se queda afuera y le reprocha a {B} no haberlo elegido.',left[0],cap),'bad')}}
+  return chosen;
+}
+
+/* ================= ELIMINACIONES ================= */
+function eliminate(c){c.alive=false;G.eo++;c.eo=G.eo;c.ep=G.ep;c.adv=[];const al=allyOf(c);if(al)leaveAl(al,c,'queda eliminado');G.alli.forEach(a=>{if(a.target===c.id)a.target=null})}
+function goodbye(b,c){
+  line(b,[c],`Últimas palabras de ${nm(c)}: <q>${(()=>{const r=worstRival(c),f=bestFriend(c);return esc(pick(arch(c)==='villano'?['¡Se van a arrepentir de esto!','Esto no es el final. Recuerden mi nombre.']:LAST).replaceAll('{R}',r?r.n:'alguien').replaceAll('{F}',f?f.n:'nadie'))})()}</q>`);
+  const p=partnerOf(c);if(p&&p.alive)line(b,[p,c],fmt('{A} despide a {B} con lágrimas en los ojos.',p,c));
+  G.lastOut.push(c);
+}
+async function raceElim(E,res){
+  const m=teamOf(res.loser);
+  const b=await sec(E,'Fin de la etapa');
+  hline(b,`${H()} espera en la meta con malas noticias.`);
+  m.forEach(eliminate);
+  line(b,m,`<span>${teamName(res.loser)} llega en último lugar y queda fuera de la carrera.</span>`,'big bad');
+  G.votes.push({ep:E.n,label:'Último en llegar',out:m,rows:[],type:'carrera'});
+  G.lastOut=m;
+}
+async function tiebreak(b,grp,need){
+  const [n,w]=pick(TIE_CH);const W=w.split('').map(Number);
+  line(b,grp.length<=6?grp:[],`¡Empate entre ${grp.map(nm).join(', ')}! Se define con un desafío de desempate: ${esc(n.toLowerCase())}.`,'big');
+  const P=me();let boost=0;
+  if(playing()&&grp.includes(P)){const m=await ask(`Desempate: ${n}. ¿Cómo lo encarás?`,[{v:'todo',label:'A todo o nada',hint:'Gran recompensa, gran riesgo'},{v:'calma',label:'Con la cabeza fría',hint:'Constante'}]);boost=m==='todo'?rnd(-15,25):rnd(0,10)}
+  const sc=grp.map(c=>[c,perfBase(c,W)+(c===P?boost:0)]).sort((x,y)=>x[1]-y[1]);
+  const lose=sc.slice(0,need).map(x=>x[0]);
+  sc.slice(need).reverse().forEach(([c])=>line(b,[c],fmt('{A} gana el desempate y se salva.',c)));
+  lose.forEach(c=>line(b,[c],fmt('{A} pierde el desempate.',c),'bad'));
+  return lose;
+}
+async function directElim(E,c){
+  const b=await sec(E,'Eliminación en el desafío','spec');G.lastOut=[];
+  hline(b,`Como se anunció, no hay ceremonia: ${nm(c)} terminó último y queda eliminado en el acto.`);
+  G.votes.push({ep:E.n,label:'Último en el desafío',out:[c],rows:[],type:'desafio'});
+  eliminate(c);line(b,[c],`${nm(c)} se va por ${G.se.elim} sin que nadie tenga que votar.`,'big bad');goodbye(b,c);
+  if(c===me())line(b,[],'Tu personaje quedó afuera. Podés seguir mirando cómo termina la temporada.');
+}
+async function specialElim(E,res){
+  const imm=res.immune||[];const replace=Math.random()<.55;
+  let pool=replace&&res.type==='team'?teamOf(res.loser):alive().filter(c=>!imm.includes(c));
+  pool=pool.filter(c=>G.merged||teamOf(c.team).length>(c.team===res.loser&&!replace?2:1));
+  if(!pool.length)return false;
+  const type=wpick([['lesion',3],['policia',1],['abandono',1.4],['descalificado',1.2]]);
+  let c;
+  if(type==='lesion')c=pool.find(x=>x.debuff)||pick(pool);
+  else if(type==='abandono')c=L()?pool.reduce((p,x)=>{const s=alive().reduce((t,o)=>t+(o!==x?rel(x,o):0),0);return !p||s<p.s?{c:x,s}:p},null).c:pick(pool);
+  else if(type==='descalificado')c=L()?pool.reduce((p,x)=>!p||x.s[3]-x.s[2]>p.s[3]-p.s[2]?x:p,null):pick(pool);
+  else c=pick(pool);
+  const T={lesion:['Evacuación médica',pick(['Durante el desafío, {A} sufre una caída terrible y no se puede levantar.','{A} termina el desafío con una lesión seria: los médicos dicen que no puede seguir.','Una reacción alérgica deja a {A} hinchado como un globo.']),`${H()} anuncia que {A} es evacuado en helicóptero.`,'Evacuación médica'],
+    policia:['¡La policía en la isla!',pick(['Un patrullero de la policía montada desembarca en la isla buscando a {A} por una vieja cuenta pendiente.','Aparece la policía con una orden de búsqueda… y el nombre de {A} está escrito en letras grandes.']),pick(['{A} escapa nadando hacia el horizonte y no vuelve más al programa.','{A} se va esposado mientras todos miran sin poder creerlo.']),'Se lo llevó la policía'],
+    abandono:['Abandono',pick(['{A} no aguanta más: extraña su casa y no soporta a nadie en el campamento.','Después de una noche terrible, {A} junta sus cosas en silencio.']),'{A} decide abandonar el programa por su cuenta.','Abandono'],
+    descalificado:['Descalificación',pick(['Las cámaras muestran a {A} haciendo trampa en el desafío.','Chef encuentra pruebas de que {A} rompió las reglas del programa.']),`${H()} descalifica a {A} en el acto.`,'Descalificación']}[type];
+  const b=await sec(E,T[0],'spec');G.lastOut=[];
+  line(b,[c],fmt(T[1],c),'bad');line(b,[HOST(),c],fmt(T[2],c),'big bad');
+  G.votes.push({ep:E.n,label:T[3],out:[c],rows:[],type:'especial'});
+  eliminate(c);alive().filter(o=>rel(o,c)>30).slice(0,2).forEach(o=>line(b,[o,c],fmt('{A} despide a {B} con tristeza.',o,c)));goodbye(b,c);
+  if(c===me())line(b,[],'Tu personaje quedó fuera del juego. Podés seguir mirando cómo termina la temporada.');
+  if(replace)hline(b,'Por lo que pasó, esta noche no hay ceremonia: nadie más se va.');
+  else hline(b,`Pero esto no cancela nada: ${res.type==='team'?teamName(res.loser)+' igual':'igual'} tiene que ir a la ceremonia esta noche.`);
+  note([c],`${nm(c)} salió del juego: ${T[3].toLowerCase()}.`);
+  return replace;
+}
+async function evacuation(E,res){
+  const pool=alive().filter(c=>!(res.immune||[]).includes(c));if(!pool.length)return ceremony(E,res,1);
+  const c=pool.find(x=>x.debuff)||pick(pool);
+  const b=await sec(E,'Evacuación médica','spec');G.lastOut=[];
+  line(b,[c],fmt(pick(['Durante el desafío, {A} sufre una caída terrible y no se puede levantar.','{A} termina el desafío con una lesión seria: los médicos dicen que no puede seguir.','Una reacción alérgica deja a {A} hinchado como un globo. Lo tienen que sacar de la isla.']),c),'bad');
+  hline(b,`${nm(c)} es evacuado en helicóptero. ${H()} anuncia que esta noche no hay ceremonia.`);
+  G.votes.push({ep:E.n,label:'Evacuación médica',out:[c],rows:[],type:'evac'});
+  eliminate(c);alive().filter(o=>rel(o,c)>30).slice(0,2).forEach(o=>line(b,[o,c],fmt('{A} despide a {B} desde el muelle.',o,c)));goodbye(b,c);
+  if(c===me())line(b,[],'Tu personaje fue evacuado. Podés seguir mirando cómo termina la temporada.');
+}
+async function ceremony(E,res,k){
+  let voters,cands;
+  if(res.type==='team'){voters=teamOf(res.loser);cands=voters.slice()}
+  else{voters=alive();cands=voters.filter(c=>!res.immune.includes(c))}
+  k=Math.max(1,Math.min(k,cands.length-1));
+  const b=await sec(E,k>1?'Ceremonia de doble eliminación':'Ceremonia de eliminación');
+  G.lastOut=[];
+  if(res.type==='team')hline(b,`<span>${teamName(res.loser)} va a la ceremonia. ${H()} los espera junto a la fogata con ${k>1?'dos malvaviscos menos':'un malvavisco menos'} que la cantidad de participantes.</span>`);
+  else hline(b,`Los ${voters.length} van a votar. Solo hay ${cands.length-k} malvaviscos para quienes no tienen inmunidad.`);
+  if(cands.length===1){const e=cands[0];eliminate(e);line(b,[e],`${nm(e)} es la única persona que queda y se va por ${G.se.elim}.`,'big bad');goodbye(b,e);G.votes.push({ep:E.n,label:'Ceremonia',out:[e],rows:[],type:'voto'});return}
+  const P=me();
+  const allyTarget=new Map();
+  for(const al of actAl()){const mem=al.mem.map(byIdG).filter(c=>c&&c.alive&&voters.includes(c));if(mem.length<2)continue;
+    const lead=alLeader(al)||mem[0];const opts=cands.filter(c=>!al.mem.includes(c.id));if(!opts.length)continue;
+    let t=opts.find(c=>c.id===al.target);
+    if(!t)t=L()?opts.reduce((a,c)=>(threat(c)-rel(lead,c))>(threat(a)-rel(lead,a))?c:a):pick(opts);
+    mem.forEach(m=>allyTarget.set(m,t));
+    if(Math.random()<.6)line(b,mem.length<=6?mem:[lead],`Antes de votar, ${alH(al)} se pone de acuerdo: el objetivo es ${nm(t)}.`)}
+  // robo y bloqueo
+  const blocked=new Set(),weight=new Map(voters.map(v=>[v,1]));
+  for(const h of voters)for(const type of ['robar','bloqueo']){
+    if(!hasAdv(h,type)||blocked.has(h))continue;
+    const opts=voters.filter(v=>v!==h&&!blocked.has(v));if(!opts.length)continue;
+    let tg=null;
+    if(h===P&&playing()){if(await yesNo(`Tenés ${ADV[type]}. ¿Lo usás esta noche?`,'Sí, usarlo','No, guardarlo',ADV_DESC[type]))tg=await chooseTarget(type==='robar'?'¿A quién le robás el voto?':'¿A quién le bloqueás el voto?',opts,relHint)}
+    else if(Math.random()<(G.merged?.55:.35))tg=opts.reduce((a,c)=>rel(h,c)<rel(h,a)?c:a);
+    if(!tg)continue;
+    useAdv(h,type);blocked.add(tg);
+    if(type==='robar'){weight.set(h,weight.get(h)+1);line(b,[h,tg],fmt('¡{A} usa el Robo de voto! {B} no vota esta noche y {A} vota por partida doble.',h,tg),'big')}
+    else line(b,[h,tg],fmt('¡{A} usa el Bloqueo de voto! {B} se queda sin votar esta noche.',h,tg),'big');
+  }
+  // votación
+  const ballots=[];
+  for(const v of voters){
+    if(blocked.has(v))continue;
+    const opts=cands.filter(c=>c!==v);if(!opts.length)continue;
+    let t,ranked=null;
+    if(v===P&&playing())t=await chooseTarget(k>1?`¿A quién vota ${P.n}? (se van los dos más votados)`:`¿A quién vota ${P.n}?`,opts,relHint);
+    else{const at=allyTarget.get(v);const loyal=at&&(L()?Math.random()<.9-(rel(v,at)>40?.5:0):Math.random()<.5);
+      ranked=opts.map(c=>[c,-rel(v,c)*(L()?1:.3)+threat(c)*v.s[3]/10*(L()?.8:.3)+rnd(0,L()?20:90)-(allied(v,c)?(L()?70:25):0)+(loyal&&at===c?80:0)-(c.lowkey?15:0)-(isCouple(v,c)?(L()?70:20):0)+(G.rivals.has(key(v.id,c.id))?20:0)-(v.owes===c.id?80:0)]).sort((x,y)=>y[1]-x[1]);t=ranked[0][0]}
+    let w=weight.get(v);
+    if(hasAdv(v,'doble')){const u=(v===P&&playing())?await yesNo(`Tenés un Voto doble. ¿Lo usás contra ${t.n}?`,'Sí, voto doble','No, guardarlo'):Math.random()<.5;if(u){useAdv(v,'doble');w++}}
+    ballots.push({v,t,orig:t,w,nul:false});addRel(t,v,-4);
+    if(hasAdv(v,'extra')&&opts.length>1){let u=false,t2=null;
+      if(v===P&&playing()){u=await yesNo('Tenés un Voto extra. ¿Lo usás para votar a una segunda persona?','Sí','No, guardarlo');if(u)t2=await chooseTarget('¿A quién va tu segundo voto?',opts.filter(c=>c!==t),relHint)}
+      else{u=Math.random()<.5;t2=ranked&&ranked[1]?ranked[1][0]:null}
+      if(u&&t2){useAdv(v,'extra');ballots.push({v,t:t2,orig:t2,w:1,nul:false,ex:true});addRel(t2,v,-4);line(b,[v],fmt('{A} usa su Voto extra: esta noche vota a dos personas.',v),'big')}}
+  }
+  const tallyOf=c=>ballots.filter(x=>x.t===c&&!x.nul).reduce((s,x)=>s+x.w,0);
+  const top=()=>Math.max(0,...cands.map(tallyOf));
+  const atRisk=c=>tallyOf(c)>0&&tallyOf(c)>=Math.max(2,top()-1);
+  const saved=new Set();
+  // estatuillas, falsas y escudos: para uno mismo o para un aliado
+  for(const h of voters)for(const type of ['inmunidad','falsa','escudo']){
+    if(!hasAdv(h,type))continue;
+    const allies=cands.filter(c=>c!==h&&!saved.has(c)&&(allied(h,c)||isCouple(h,c)));
+    let target=null;
+    if(h===P&&playing()){
+      const opts=type==='escudo'?cands.filter(c=>c!==h&&!saved.has(c)):cands.filter(c=>!saved.has(c));
+      if(!opts.length)continue;
+      if(await yesNo(`¿Usás tu ${advLabel(h,type)} antes de que se lean los votos?`,'Sí, usarla','No, guardarla',ADV_DESC[type]))target=opts.length===1?opts[0]:await chooseTarget('¿A quién protegés?',opts,c=>c===h?'Vos':relHint(c));
+    }else{
+      if(type!=='escudo'&&cands.includes(h)&&!saved.has(h)&&atRisk(h)&&(tallyOf(h)>=top()||Math.random()<.4))target=h;
+      else{const a=allies.filter(atRisk).sort((x,y)=>tallyOf(y)-tallyOf(x))[0];if(a&&!(cands.includes(h)&&atRisk(h))&&Math.random()<(L()?.75:.4))target=a}
+    }
+    if(!target)continue;
+    useAdv(h,type);
+    if(type==='falsa'){line(b,[h,target],fmt(`{A} saca su estatuilla para salvar a ${target===h?'su persona':'{B}'}… ${H()} la mira, la huele y se ríe: "¡Es falsa! Es un pedazo de madera pintado."`,h,target),'big bad');
+      const pl=byIdG(G.fakes[h.id]);if(pl){line(b,[pl,h],fmt('{A} sonríe desde su lugar: el plan salió perfecto.',pl,h));addRel(h,pl,-40);note([pl,h],fmt('{A} engañó a {B} con una estatuilla falsa.',pl,h))}continue}
+    saved.add(target);
+    if(target===h)line(b,[h],fmt(`¡{A} se levanta y usa su ${ADV[type]}! Ningún voto en su contra va a contar.`,h),'big');
+    else{addRel(h,target,25);line(b,[h,target],fmt(`¡{A} usa su ${ADV[type]} para salvar a {B}! Los votos en contra de {B} no van a contar.`,h,target),'big');note([h,target],fmt('{A} usó una ventaja para salvar a {B}.',h,target))}
+  }
+  // tótem del rebote
+  for(const h of cands){
+    if(!hasAdv(h,'rebote')||saved.has(h))continue;
+    const opts=cands.filter(c=>c!==h&&!saved.has(c));if(!opts.length)continue;
+    let tg=null;
+    if(h===P&&playing()){if(await yesNo('¿Usás el Tótem del rebote?','Sí, usarlo','No, guardarlo',ADV_DESC.rebote))tg=await chooseTarget('¿A quién le mandás los votos en tu contra?',opts,relHint)}
+    else if(atRisk(h))tg=opts.reduce((a,c)=>rel(h,c)<rel(h,a)?c:a);
+    if(!tg)continue;
+    useAdv(h,'rebote');let n=0;ballots.forEach(x=>{if(x.t===h&&!x.nul){x.t=tg;n++}});
+    line(b,[h,tg],fmt(n?'¡{A} usa el Tótem del rebote! Los votos en su contra pasan a {B}.':'{A} usa el Tótem del rebote contra {B}… pero nadie había votado en su contra.',h,tg),'big');
+    if(n)addRel(tg,h,-30);
+  }
+  // anulador
+  for(const h of voters){
+    if(!hasAdv(h,'anular'))continue;
+    const live=ballots.filter(x=>!x.nul&&x.v!==h);if(!live.length)continue;
+    let tb=null;
+    if(h===P&&playing()){if(await yesNo('Tenés el Anulador de voto. ¿Lo usás?','Sí, anular un voto','No, guardarlo',ADV_DESC.anular)){const who=await chooseTarget('¿El voto de quién anulás?',[...new Set(live.map(x=>x.v))],relHint);tb=live.find(x=>x.v===who)}}
+    else{const vs=live.filter(x=>x.t===h);if(vs.length&&!saved.has(h)&&Math.random()<.75)tb=vs.sort((x,y)=>y.w-x.w)[0];else{const al=live.filter(x=>allied(h,x.t)&&atRisk(x.t));if(al.length&&Math.random()<.5)tb=al[0]}}
+    if(tb){useAdv(h,'anular');tb.nul=true;line(b,[h,tb.v],fmt(tb.t===h||!allied(h,tb.t)?'¡{A} usa el Anulador de voto! El voto de {B} no va a contar.':`¡{A} usa el Anulador de voto para proteger a {C}! El voto de {B} no cuenta.`,h,tb.v,tb.t),'big')}
+  }
+  line(b,[],'Los votos','phase');
+  line(b,[],`<div class="votes">${ballots.map(x=>`<span>${av(x.v)}${nm(x.v)} → ${x.orig!==x.t?`<s>${nm(x.orig)}</s> ${nm(x.t)}<span class="badge">rebote</span>`:x.nul||saved.has(x.t)?`<s>${nm(x.t)}</s>`:nm(x.t)}${x.w>1?`<span class="badge">x${x.w}</span>`:''}${x.ex?'<span class="badge">extra</span>':''}${x.nul?'<span class="badge x">anulado</span>':saved.has(x.t)?'<span class="badge x">protegido</span>':''}</span>`).join('')}</div>`);
+  ballots.forEach(x=>{if(allied(x.v,x.orig)){const al=allyOf(x.orig);line(b,[x.v,x.orig],fmt(`¡Traición! {A} votó contra {B}, su compañero de ${alH(al)}.`,x.v,x.orig),'bad');addRel(x.v,x.orig,-35);al.mem.map(byIdG).forEach(m=>{if(m&&m!==x.v)addRel(m,x.v,-15)});leaveAl(al,x.v,`traiciona a ${x.orig.n} y queda fuera`);note([x.v,x.orig],fmt(`{A} traicionó a {B} y quedó fuera de ${alH(al)}.`,x.v,x.orig))}
+    if(x.v.owes===x.orig.id){addRel(x.orig,x.v,-40);line(b,[x.v,x.orig],fmt('{A} rompe la promesa que le había hecho a {B}.',x.v,x.orig),'bad');x.v.owes=null}});
+  const count=c=>saved.has(c)?0:tallyOf(c);
+  cands.forEach(c=>{c.va+=tallyOf(c);c.lastVotes=tallyOf(c)});
+  let pool=cands.filter(c=>!saved.has(c));if(pool.length<=k)pool=pool.length?pool:cands;
+  k=Math.min(k,pool.length);
+  const sorted=[...pool].sort((x,y)=>count(y)-count(x));const outs=[];
+  while(outs.length<k&&sorted.length){
+    const c0=count(sorted[0]);const grp=sorted.filter(c=>count(c)===c0);const need=k-outs.length;
+    if(grp.length<=need){outs.push(...grp);grp.forEach(c=>sorted.splice(sorted.indexOf(c),1))}
+    else{outs.push(...await tiebreak(b,grp,need));break}
+  }
+  const safe=cands.filter(c=>!outs.includes(c)).sort((x,y)=>count(x)-count(y));
+  if(k===1){
+    const last=safe.length?safe[safe.length-1]:null;const early=safe.slice(0,-1);
+    if(early.length)line(b,early.length<=6?early:[],`<span><span class="mm"></span> Reciben malvavisco: ${early.map(nm).join(', ')}.</span>`);
+    if(last){hline(b,`${H()} levanta el último malvavisco. Quedan ${nm(last)} y ${nm(outs[0])}…`);line(b,[last],`<span><span class="mm"></span> El último malvavisco es para ${nm(last)}.</span>`)}
+  }else{
+    if(safe.length)line(b,safe.length<=6?safe:[],`<span><span class="mm"></span> Reciben malvavisco: ${safe.map(nm).join(', ')}.</span>`);
+    hline(b,`No quedan más malvaviscos. ${outs.map(nm).join(' y ')}, se van los dos.`);
+  }
+  G.votes.push({ep:E.n,label:k>1?'Doble eliminación':'Ceremonia',out:outs.slice(),rows:cands.map(c=>[c,tallyOf(c),saved.has(c)]).sort((x,y)=>y[1]-x[1]),type:'voto'});
+  for(const out of outs){
+    const hadAdv=out.adv.filter(t=>t!=='falsa').length;const v=count(out);
+    eliminate(out);
+    line(b,[out],`${nm(out)} recibe ${v} ${v===1?'voto':'votos'} y se va por ${G.se.elim}.${hadAdv?' ¡Y se lleva una ventaja sin usar!':''}`,'big bad');
+    goodbye(b,out);
+    if(out===P)line(b,[],'Tu personaje quedó afuera. Podés seguir mirando cómo termina la temporada (y quizás formes parte del jurado).');
+  }
+}
+function juryList(){const j=G.cast.filter(c=>!c.alive&&c.madeMerge).sort((a,b)=>b.eo-a.eo);return j.length?j:G.cast.filter(c=>!c.alive).sort((a,b)=>b.eo-a.eo).slice(0,9)}
+async function semifinal(E){
+  E.title='Semifinal';
+  if(!G.merged)await doMerge(E);
+  const b=await sec(E,'Semifinal','spec');
+  hline(b,`Quedan ${alive().length}. Esta noche no votan ustedes: el jurado de eliminados decide quién no llega a la final.`);
+  const holders=alive().filter(c=>c.adv.length);
+  if(holders.length)line(b,holders,`Las ventajas vencen hoy: ${holders.map(nm).join(', ')} ${holders.length>1?'pierden':'pierde'} lo que guardaba${holders.length>1?'n':''}.`);
+  holders.forEach(c=>c.adv=[]);G.advExpired=true;
+  await camp(E);
+  await confessional(E);
+  const res=await challenge(E,'Semifinal');
+  const jury=juryList();
+  const cands=alive().filter(c=>!res.immune.includes(c));
+  const jb=await sec(E,'Voto del jurado');
+  G.lastOut=[];
+  hline(jb,`El jurado (${jury.map(nm).join(', ')}) entra a la fogata. Cada uno vota a quién <b>eliminar</b>.`);
+  const P=me();const jv=[];
+  for(const j of jury){let t;
+    if(j===P)t=await chooseTarget('Sos parte del jurado. ¿A quién eliminás de la semifinal?',cands,c=>`Relación: ${Math.round(rel(P,c))}`);
+    else t=L()?cands.reduce((a,c)=>(-rel(j,c)+c.wins*2+rnd(0,22))>(-rel(j,a)+a.wins*2+rnd(0,22))?c:a):pick(cands);
+    jv.push([j,t])}
+  line(jb,[],`<div class="votes">${jv.map(([v,t])=>`<span>${av(v)}${nm(v)} → ${nm(t)}</span>`).join('')}</div>`);
+  const tl=new Map();jv.forEach(([v,t])=>tl.set(t,(tl.get(t)||0)+1));
+  const mx=Math.max(...cands.map(c=>tl.get(c)||0));const top=cands.filter(c=>(tl.get(c)||0)===mx);
+  if(top.length>1)line(jb,top,`Empate en el jurado entre ${top.map(nm).join(' y ')}. Se va quien tenga peor relación con el jurado.`);
+  const out=top.reduce((a,c)=>jury.reduce((s,j)=>s+rel(j,c),0)<jury.reduce((s,j)=>s+rel(j,a),0)?c:a);
+  cands.forEach(c=>c.va+=tl.get(c)||0);
+  G.votes.push({ep:E.n,label:'Semifinal (jurado)',out:[out],rows:cands.map(c=>[c,tl.get(c)||0,false]).sort((x,y)=>y[1]-x[1]),type:'jurado'});
+  eliminate(out);
+  line(jb,[out],`El jurado elimina a ${nm(out)} a un paso de la final.`,'big bad');
+  goodbye(jb,out);
+  line(jb,alive(),`¡${alive().map(nm).join(', ')} ${alive().length>1?'son los finalistas':'es finalista'}!`,'big');
+}
+async function finale(E){
+  E.title='Gran final';
+  const b=await sec(E,'La gran final','spec');
+  const P=me();
+  let fins;
+  if(G.race)fins=liveTeams().map(i=>({name:G.teams[i].name,m:teamOf(i),i}));
+  else fins=alive().map(c=>({name:c.n,m:[c]}));
+  const fname=f=>f.m.length>1?teamName(f.i):nm(f.m[0]);
+  hline(b,`Llegan a la final: ${fins.map(fname).join(', ')}. Hay ${G.se.prize} en juego.`);
+  fins.forEach(f=>f.m.forEach(c=>line(b,[c],`${nm(c)}: <q>${esc(pick(['Llegué hasta acá y no pienso perder.','Pensar que el primer día no sabía ni dónde estaba el baño.','Esto es por todos los que me subestimaron.','Gane o pierda, fue la mejor experiencia de mi vida.']))}</q>`)));
+  const fb=await sec(E,'El momento de la verdad');
+  let winner;
+  if(G.cfg.finalMode==='jurado'&&!G.race){
+    const jury=juryList();
+    if(jury.length){
+      line(fb,[],'El jurado de eliminados vota quién se lleva el premio.','phase');
+      const jv=[];
+      for(const j of jury){let t;
+        if(j===P)t=await chooseTarget('Sos parte del jurado. ¿Quién merece ganar?',fins.map(f=>f.m[0]),c=>`Relación: ${Math.round(rel(P,c))}`);
+        else t=L()?fins.map(f=>f.m[0]).reduce((a,c)=>(rel(j,c)+c.wins*3+rnd(0,20))>(rel(j,a)+a.wins*3+rnd(0,20))?c:a):pick(fins).m[0];
+        jv.push([j,t])}
+      line(fb,[],`<div class="votes">${jv.map(([v,t])=>`<span>${av(v)}${nm(v)} → ${nm(t)}</span>`).join('')}</div>`);
+      const tl=new Map();jv.forEach(([v,t])=>tl.set(t,(tl.get(t)||0)+1));
+      const mx=Math.max(...tl.values());const top=[...tl].filter(x=>x[1]===mx).map(x=>x[0]);
+      G.votes.push({ep:E.n,label:'Final (jurado)',out:[],rows:fins.map(f=>[f.m[0],tl.get(f.m[0])||0,false]).sort((x,y)=>y[1]-x[1]),type:'final'});
+      if(top.length===1)winner=fins.find(f=>f.m[0]===top[0]);
+      else line(fb,top,'¡Empate en el jurado! Se define con un último desafío.');
+    }
+  }
+  if(!winner){
+    line(fb,[],'Desafío final: la carrera de obstáculos más larga de la historia del programa','phase');
+    let boost=0;
+    if(playing()&&fins.some(f=>f.m.includes(P))){const m=await ask('Último desafío: ¿cómo lo encarás?',[{v:'todo',label:'A todo o nada',hint:'Gran recompensa, gran riesgo'},{v:'seguro',label:'Con la cabeza fría',hint:'Constante'}]);boost=m==='todo'?rnd(-20,30):rnd(0,10)}
+    const r=fins.map(f=>({f,v:f.m.reduce((s,c)=>s+c.s[0]+c.s[1]+c.s[2]+rnd(0,noise(25))+(c===P?boost:0),0)/f.m.length})).sort((x,y)=>y.v-x.v);
+    const lastF=r[r.length-1].f;
+    line(fb,lastF.m,`${fname(lastF)} ${lastF.m.length>1?'tropiezan':'tropieza'} en el último tramo.`,'bad');
+    r.forEach((x,k)=>line(fb,x.f.m,`${k+1}º ${fname(x.f)}`));
+    winner=r[0].f;
+  }
+  G.winner=winner.m;
+  line(fb,winner.m,`¡${winner.m.map(nm).join(' y ')} ${winner.m.length>1?'ganan':'gana'} la temporada y se ${winner.m.length>1?'llevan':'lleva'} ${G.se.prize}!`,'big');
+  G.over=true;
+}
+function finalRanking(){
+  const w=G.winner||[];const fin=G.cast.filter(c=>c.alive&&!w.includes(c));
+  const elim=G.cast.filter(c=>!c.alive).sort((a,b)=>b.eo-a.eo);
+  return [...w.map(c=>[c,'Ganador/a']),...fin.map(c=>[c,'Finalista']),...elim.map(c=>[c,'Eliminado en ep. '+c.ep])];
+}
+
+/* ================= PÁGINAS DEL JUEGO ================= */
+const TABS=[['ep','Episodio'],['cast','Participantes'],['alli','Alianzas'],['rel','Relaciones'],['votes','Votaciones'],['sum','Resumen']];
+function draw(force){
+  if(!G)return;if(G.auto&&!force)return;
+  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tab" data-tab="${k}" aria-current="${G.tab===k}"${k==='sum'&&!G.over?' disabled':''}>${l}</button>`).join('');
+  const f={ep:epPage,cast:castPage,alli:alliPage,rel:relPage,votes:votesPage,sum:sumPage,seq:seqPage}[G.tab];
+  $('#app').innerHTML=f();
+}
+function epPage(){
+  const v=G.view;const E=G.episodes[v.e];if(!E)return'';
+  const s=Math.min(v.s,E.blocks.length-1);const B=E.blocks[s];
+  const lastE=v.e===G.episodes.length-1,lastS=lastE&&s===E.blocks.length-1;
+  let h=`<div class="pills">${G.episodes.map((x,i)=>`<button class="pill" data-ep="${i}" aria-current="${v.e===i}">${x.title==='Gran final'?'Final':x.title.startsWith('Semifinal')?'Semifinal':'Ep. '+x.n}</button>`).join('')}</div>`;
+  h+=`<div class="ephead"><h2>${esc(E.title)}</h2><span class="hint">${G.cfg.saga>1?'Temporada '+G.cfg.saga+' · ':''}${esc(G.se.name)} · ${E.left} en juego al empezar · ${G.cfg.style==='logic'?'con lógica':'totalmente random'}</span></div>`;
+  h+=`<div class="row" style="flex-wrap:nowrap;align-items:center;margin-top:8px"><span class="hint" style="flex:1">${G.full?`Episodio completo · ${E.blocks.length} partes`:`Parte ${s+1} de ${E.blocks.length}`}</span><button class="btn" id="bFull" style="flex:0 0 auto;min-height:38px;font-size:14px">${G.full?'Ver por partes':'Ver episodio completo'}</button></div>`;
+  if(!G.full)h+=`<div class="secs">${E.blocks.map((x,i)=>`<button class="sec" data-sec="${i}" aria-current="${i===s}">${i+1}. ${esc(x.h.replace(/^Desafío de (inmunidad|recompensa): .*/,'Desafío de $1'))}</button>`).join('')}</div>`;
+  if(lastS&&G.over&&E.title==='Gran final')h+=`<div class="win"><span style="display:flex;gap:10px">${G.winner.map(c=>av(c,'xl')).join('')}</span><h2>${G.winner.map(c=>esc(c.n)).join(' y ')}</h2><div>${G.winner.length>1?'ganan':'gana'} ${esc(G.se.prize)}</div></div>`;
+  const blkH=B=>`<div class="blk ${B.cls}" style="margin-bottom:14px"><h3>${esc(B.h)}</h3><ul>${B.items.map(it=>`<li class="${it.cls}">${it.avh?`<span class="avs">${it.avh}</span>`:''}<span style="flex:1">${it.html}</span></li>`).join('')}</ul></div>`;
+  if(G.full)h+=E.blocks.map(blkH).join('');else if(B)h+=blkH(B);
+  if(lastE&&G.over&&E.title==='Gran final')h+=seqCta();
+  if((lastS||G.full&&lastE)&&G.pending){const p=G.pending;h+=`<div class="ask" id="askBox"><h3>${esc(p.q)}</h3><div class="opts">${p.opts.map((o,i)=>`<button class="opt" data-opt="${i}">${o.chars?o.chars.map(c=>av(c)).join(''):''}<span><b>${esc(o.label)}</b>${o.hint?`<small>${esc(o.hint)}</small>`:''}</span></button>`).join('')}</div></div>`}
+  const fullLast=G.full&&lastE;
+  h+=`<div class="navbar">${s>0&&!G.full?`<button class="btn" data-sec="${s-1}">← Anterior</button>`:v.e>0?`<button class="btn" data-epend="${v.e-1}">← Episodio anterior</button>`:''}<span class="sp"></span>`;
+  if(G.full&&!lastE)h+=`<button class="btn go" data-ep="${v.e+1}">Episodio siguiente →</button>`;
+  else if(!lastS&&!fullLast){h+=s<E.blocks.length-1?`<button class="btn go" data-sec="${s+1}">Siguiente →</button>`:`<button class="btn go" data-ep="${v.e+1}">Episodio siguiente →</button>`}
+  else if(G.gate&&!G.pending)h+=`<button class="btn go" id="bCont">Continuar →</button>`;
+  else if(fullLast&&!E.done&&!G.gate){}
+  else if(E.done&&!G.over)h+=`<button class="btn go" id="bNext">Siguiente episodio →</button>`;
+  else if(G.over)h+=`<button class="btn go" data-tab="sum">Ver resumen de la temporada</button>`;
+  if(!G.over&&!playing()&&!G.pending)h+=`<button class="btn" id="bAll">Simular hasta el final</button>`;
+  return h+'</div>';
+}
+function statusOf(c){if(G.winner&&G.winner.includes(c))return['Ganador/a','#c99a0c'];if(!c.alive)return['Eliminado · ep. '+c.ep,'#8a8f8b'];if(G.merged)return['En juego · fusión','#b8862b'];return[G.teams[c.team].name,G.teams[c.team].color]}
+const tName=i=>`<b style="color:${G.teams[i].color}">${esc(G.teams[i].name)}</b>`;
+function teamTrail(c){if(c.team0==null||c.team0<0)return'';const h=c.teamHist;return `<div class="meta">Equipo original: ${tName(c.team0)}${h.length>1?`<br>Recorrido: ${h.map(tName).join(' → ')}`:''}</div>`}
+function castPage(){
+  const list=[...G.cast].sort((a,b)=>(b.alive-a.alive)||(a.alive?(a.team-b.team):(b.eo-a.eo)));
+  const statRow=(l,v)=>`<div class="stat"><span>${l}</span><span class="bar"><i style="width:${v*10}%"></i></span><b>${Math.round(v)}</b></div>`;
+  return `<h2 class="ph2">Participantes</h2><div class="legend" style="margin-bottom:12px"><span style="position:relative;width:14px;height:20px">${TOTEM.replace('class="tot"','style="width:13px;height:21px"')}</span>Tótem en la foto = tiene una ventaja ${G.player?'(no sabés cuál, salvo la tuya)':''}</div>
+  <div class="cgrid">${list.map(c=>{const [st,sc]=statusOf(c);const al=allyOf(c),p=partnerOf(c),r=worstRival(c),f=bestFriend(c);
+    return `<div class="ccard${c.alive?'':' out'}" style="--t:${sc}">${av(c,'xl')}<h3>${nm(c)}</h3><div class="meta">${esc(ORIG[c.o]||'')}</div><span class="tg" style="border-color:${sc}">${esc(st)}</span>${teamTrail(c)}<div class="tagrow">${c.returned?`<span class="tg">Volvió en el repechaje${c.returned>1?' ('+c.returned+' veces)':''}</span>`:''}${c.teamHist.length>1?'<span class="tg">Cambió de equipo</span>':''}${!c.alive&&c.madeMerge?'<span class="tg">Jurado</span>':''}</div>
+    <div style="width:100%">${statRow('Físico',c.s[0])}${statRow('Mente',c.s[1])}${statRow('Social',c.s[2])}${statRow('Estrategia',c.s[3])}</div>
+    <div class="tagrow"><span class="tg">${c.wins} ${c.wins===1?'victoria':'victorias'}</span><span class="tg">${c.va} ${c.va===1?'voto recibido':'votos recibidos'}</span>${c.adv.length&&(!G.player||c===me())?`<span class="tg">${c.adv.map(t=>advLabel(c,t)).join(', ')}</span>`:''}</div>
+    ${c.alive?`<div class="meta">${al?`Alianza: <span class="alname">${esc(al.name)}</span><br>`:''}${p?`Pareja: ${esc(p.n)}<br>`:''}${f?`Mejor relación: ${esc(f.n)}<br>`:''}${r&&rel(c,r)<-10?`Rival: ${esc(r.n)}`:''}</div>`:''}
+    <button class="btn" data-relsel="${c.id}" style="min-height:36px;font-size:13px">Ver relaciones</button></div>`}).join('')}</div>`;
+}
+function alliPage(){
+  const all=G.alli;
+  const maxEp=G.snap.length-1;
+  if(G.alEp==null||G.alEp>maxEp)G.alEp=maxEp;
+  const sn=G.snap[G.alEp]||{al:[]};
+  const memH=id=>{const c=byIdG(id);return c?`<span>${av(c)}${esc(c.n)}</span>`:''};
+  let h=`<h2 class="ph2">Alianzas</h2>`;
+  if(!all.length)return h+`<div class="card empty">Todavía no se formó ninguna alianza.</div>`;
+  h+=`<section class="card" style="margin-bottom:18px"><label class="lbl" for="alEp">Cómo estaban las alianzas al final del episodio <span id="alEpN">${G.alEp===0?'(inicio)':G.alEp}</span></label>
+    <input type="range" id="alEp" min="0" max="${maxEp}" value="${G.alEp}">
+    <div class="acards" style="margin-top:12px">${sn.al.length?sn.al.map(s=>{const al=all.find(a=>a.id===s.id);return `<div class="acard" style="--t:${al.color}"><h3>${esc(al.name)}</h3><div class="amem">${s.mem.map(memH).join('')}</div></div>`}).join(''):'<p class="hint">No había alianzas activas en ese momento.</p>'}</div></section>`;
+  h+=`<section class="card" style="margin-bottom:18px"><h2>Integrantes episodio por episodio</h2><div class="track"><table><thead><tr><th>Alianza</th>${G.snap.map(s=>`<th>${s.ep===0?'Inicio':'Ep. '+s.ep}</th>`).join('')}</tr></thead><tbody>${all.map(al=>`<tr><td><span class="alname" style="color:${al.color}">${esc(al.name)}</span></td>${G.snap.map(s=>{const x=s.al.find(a=>a.id===al.id);return `<td>${x?`<span class="dot" style="--t:${al.color}" title="${esc(x.mem.map(i=>byIdG(i)?.n).join(', '))}">${x.mem.length}</span>`:''}</td>`}).join('')}</tr>`).join('')}</tbody></table></div><p class="hint">El número es la cantidad de integrantes; pasá el mouse para ver quiénes eran.</p></section>`;
+  h+=`<h2 class="ph2">Historia de cada alianza</h2><div class="acards">${[...all].sort((a,b)=>(!!a.ended-!!b.ended)||b.mem.length-a.mem.length).map(al=>`<div class="acard" style="--t:${al.color}"><h3>${esc(al.name)}</h3><div class="hint" style="margin-bottom:8px">${al.ended?`Disuelta en el episodio ${al.ended}`:`Activa · ${al.mem.length} integrantes`} · formada ${al.formed?'en el episodio '+al.formed:'antes del juego'}</div>${al.ended?'':`<div class="amem">${al.mem.map(memH).join('')}</div>`}<ul class="alog">${al.log.map(l=>`<li><b>${l.ep?'Ep. '+l.ep:'Inicio'}</b><span>${esc(l.t)}</span></li>`).join('')}</ul></div>`).join('')}</div>`;
+  return h;
+}
+function relPage(){
+  const sel=G.relSel&&byIdG(G.relSel)||me()||G.cast[0];
+  const os=G.cast.filter(c=>c!==sel).map(c=>[c,rel(sel,c)]).sort((a,b)=>b[1]-a[1]);
+  const pair=(k)=>{const [a,b]=k.split('|');return [byIdG(a),byIdG(b)]};
+  const plist=(arr,empty)=>arr.length?arr.map(([a,b,t])=>`<div class="row" style="flex-wrap:nowrap;gap:8px;margin-bottom:6px"><span class="avs" style="display:flex;flex:none">${av(a)}${av(b)}</span><span style="flex:1">${nm(a)} y ${nm(b)}${t?` <span class="hint">${t}</span>`:''}</span></div>`).join(''):`<p class="hint">${empty}</p>`;
+  const roms=G.rom.filter(r=>r.st!=='crush').map(r=>[byIdG(r.a),byIdG(r.b),r.st==='pareja'?'en pareja':'se separaron']);
+  return `<h2 class="ph2">Relaciones</h2><div class="grid2"><section class="card"><label class="lbl" for="relSel">Ver las relaciones de</label>
+  <select id="relSel" style="margin-bottom:14px">${G.cast.map(c=>`<option value="${c.id}"${c===sel?' selected':''}>${esc(c.n)}${c.alive?'':' (eliminado)'}</option>`).join('')}</select>
+  <div class="row" style="flex-wrap:nowrap;gap:12px;margin-bottom:12px"><span style="flex:none">${av(sel,'lg')}</span><div><b>${esc(sel.n)}</b><div class="hint">${allyOf(sel)?'Alianza: '+esc(allyOf(sel).name):'Sin alianza'}</div></div></div>
+  <div class="rlist">${os.map(([c,v])=>`<div class="rrow">${av(c)}<span>${esc(c.n)}</span><span class="rbar"><i style="${v>=0?`left:50%;width:${v/2}%;background:#1f9e74`:`right:50%;width:${-v/2}%;background:#c0392b`}"></i></span><b class="${v>=0?'pos':'neg'}">${v>0?'+':''}${Math.round(v)}</b></div>`).join('')}</div></section>
+  <div class="col" style="display:grid;gap:18px"><section class="card"><h2>Romances</h2>${plist(roms,'Todavía no hubo romances.')}</section>
+  <section class="card"><h2>Mejores amigos</h2>${plist([...G.bff].map(pair).map(([a,b])=>[a,b,'']),'Todavía no hay mejores amigos declarados.')}</section>
+  <section class="card"><h2>Rivalidades</h2>${plist([...G.rivals].map(pair).map(([a,b])=>[a,b,'']),'Todavía no hay rivalidades declaradas.')}</section></div></div>`;
+}
+function votesPage(){
+  if(!G.votes.length)return `<h2 class="ph2">Votaciones</h2><div class="card empty">Todavía no hubo ninguna eliminación.</div>`;
+  return `<h2 class="ph2">Votaciones</h2><section class="card"><div class="scroll"><table class="t stack"><thead><tr><th>Ep.</th><th>Ceremonia</th><th>Eliminado</th><th>Votos</th></tr></thead><tbody>${G.votes.map(v=>`<tr><td>${v.ep}</td><td>${esc(v.label)}</td><td>${v.out.length?`<span class="row" style="flex-wrap:nowrap;gap:6px">${v.out.map(c=>av(c)).join('')} ${v.out.map(c=>esc(c.n)).join(' y ')}</span>`:'—'}</td><td>${v.rows.filter(r=>r[1]>0||r[2]).map(([c,n,s])=>`${esc(c.n)} ${s?'<span class="badge x">inmune</span>':n}`).join(' · ')||'—'}</td></tr>`).join('')}</tbody></table></div></section>`;
+}
+function seqCta(){return `<div class="seqcta"><p><b>¿Querés una temporada ${G.cfg.saga+1}?</b> Como en la serie, solo los participantes más destacados consiguen lugar en la siguiente, y se llevan sus amistades, romances y rivalidades.</p><button class="btn go" id="bSeq">Armar la temporada ${G.cfg.saga+1}</button></div>`}
+const NEXT_SEASON={isla:'accion',accion:'gira',gira:'estrellas',revancha:'estrellas',estrellas:'pahkitew',pahkitew:'estrellas',carrera:'carrera',reboot:'reboot',libre:'libre'};
+function seqSimulate(){
+  const Q=G.seq;const rk=finalRanking().map(x=>x[0]);const N=rk.length;Q.n=clamp(Q.n,4,N);
+  const drama=c=>G.rom.filter(r=>r.a===c.id||r.b===c.id).length*4+[...G.rivals].filter(k=>k.split('|').includes(c.id)).length*4;
+  const sc=new Map(G.cast.map(c=>[c,(N-rk.indexOf(c))*2+c.wins*3+c.advUsed*2+drama(c)+c.va*.5+rnd(0,noise(14))]));
+  const order=[...G.cast].sort((a,b)=>sc.get(b)-sc.get(a));
+  Q.q=new Set(order.slice(0,Q.n).map(c=>c.id));
+  const L2=[];const ch=pick(['una carrera de obstáculos por todo el set','una audición frente a cámara','una prueba de resistencia en el lago helado','una búsqueda del tesoro por la isla']);
+  L2.push([[HOST()],`${H()} reúne a los ${N} participantes de la temporada para un desafío de clasificación: ${ch}. Solo ${Q.n} consiguen lugar en la temporada ${G.cfg.saga+1}.`]);
+  L2.push([[order[0]],`${nm(order[0])} arrasa en la clasificación.`]);
+  if(G.winner&&G.winner.some(w=>Q.q.has(w.id)))L2.push([G.winner,`${G.winner.map(nm).join(' y ')}, ${G.winner.length>1?'ganadores':'ganador'} de la temporada, ${G.winner.length>1?'se aseguran':'se asegura'} su lugar.`]);
+  else if(G.winner)L2.push([G.winner,`¡Sorpresa! ${G.winner.map(nm).join(' y ')} no ${G.winner.length>1?'logran':'logra'} clasificar pese a haber ganado.`]);
+  if(order[Q.n])L2.push([[order[Q.n-1],order[Q.n]],`${nm(order[Q.n-1])} se queda con el último lugar por muy poco; ${nm(order[Q.n])} queda afuera.`]);
+  const out=order.slice(Q.n);if(out.length)L2.push([out.length<=6?out:[],`No clasifican: ${out.map(nm).join(', ')}.`]);
+  Q.lines=L2;Q.done=true;
+}
+function seqPage(){
+  const Q=G.seq;
+  let h=`<h2 class="ph2">Temporada ${G.cfg.saga+1}</h2><section class="card" style="margin-bottom:18px"><p style="margin-top:0">Como pasó al terminar la primera temporada de la serie, solo una parte del elenco consigue lugar en la siguiente. Podés simular un desafío de clasificación o elegir a mano quiénes vuelven. Después configurás las reglas como siempre.</p>
+  <div class="row"><div style="flex:0 1 200px"><label class="lbl" for="seqN">¿Cuántos clasifican?</label><input type="number" id="seqN" min="4" max="${G.cast.length}" value="${Q.n}"></div><button class="btn go" id="seqSim" style="flex:0 1 auto;align-self:end">Simular desafío de clasificación</button><button class="btn" id="seqHand" style="flex:0 1 auto;align-self:end">Elegir a mano</button></div></section>`;
+  if(Q.lines.length)h+=`<div class="blk" style="margin-bottom:18px"><h3>Desafío de clasificación</h3><ul>${Q.lines.map(([ch,t])=>`<li>${ch.length&&ch.length<=6?`<span class="avs">${ch.map(c=>av(c)).join('')}</span>`:''}<span style="flex:1">${t}</span></li>`).join('')}</ul></div>`;
+  if(Q.done)h+=`<section class="card"><h2>Clasificados · <span class="count">${Q.q.size}</span></h2><p class="hint" style="margin-top:0">Tocá un personaje para sumarlo o sacarlo.</p><div class="chips">${[...G.cast].sort((a,b)=>Q.q.has(b.id)-Q.q.has(a.id)||a.n.localeCompare(b.n)).map(c=>`<button class="chip" data-seqc="${c.id}" aria-pressed="${Q.q.has(c.id)}">${avS(c,Q.q.has(c.id)?'#2c5e3d':'#8a8f8b')}${esc(c.n)}</button>`).join('')}</div>
+  <div class="navbar"><span class="sp"></span><span class="err" id="seqErr"></span><button class="btn go" id="seqGo">Configurar la temporada ${G.cfg.saga+1} →</button></div></section>`;
+  return h;
+}
+function seqGo(){
+  const Q=G.seq;const q=[...Q.q];if(q.length<4){$('#seqErr').textContent='Tienen que clasificar al menos 4.';return}
+  const inQ=k=>{const [a,b]=k.split('|');return q.includes(a)&&q.includes(b)};
+  const carry={rel:{},rom:G.rom.filter(r=>q.includes(r.a)&&q.includes(r.b)).map(r=>({...r})),rivals:[...G.rivals].filter(inQ),bff:[...G.bff].filter(inQ),al:actAl().map(a=>({name:a.name,mem:a.mem.filter(id=>q.includes(id))})).filter(a=>a.mem.length>=2)};
+  for(const k in G.rel)if(inQ(k))carry.rel[k]=G.rel[k];
+  const saga=G.cfg.saga+1,raw=G.cfgRaw;
+  const next=NEXT_SEASON[raw.season]||raw.season;
+  G=null;$('#topbtns').hidden=true;$('#tabs').hidden=true;
+  applySeason(next,true);S.sel=new Set(q);S.carry=carry;S.saga=saga;S.style=raw.style;S.mode=raw.mode;
+  if(SEASONS[next].race){S.teams=Math.max(S.finalSize+1,Math.floor(q.length/2));S.names=[]}
+  else{S.teams=Math.min(S.teams,Math.max(1,Math.floor(q.length/4)));S.mergeAt=Math.max(4,Math.round(q.length*.55))}
+  if(!q.includes(raw.player))S.player=q[0];else S.player=raw.player;
+  S.rels=[];S.alls=[];S.step=2;drawSetup();window.scrollTo(0,0);
+}
+function sumPage(){
+  if(!G.over)return '';
+  const rk=finalRanking();
+  return `<div class="win"><span style="display:flex;gap:10px">${G.winner.map(c=>av(c,'xl')).join('')}</span><h2>${G.winner.map(c=>esc(c.n)).join(' y ')}</h2><div>${G.winner.length>1?'ganan':'gana'} ${esc(G.se.prize)} · ${esc(G.se.name)}</div></div>
+  <section class="card"><h2>Posiciones finales</h2><div class="scroll"><table class="t stack"><thead><tr><th>#</th><th>Personaje</th><th>Equipo original</th><th>Resultado</th><th class="n">Desafíos ganados</th><th class="n">Inmunidades individuales</th><th class="n">Ventajas obtenidas</th><th class="n">Ventajas usadas</th><th class="n">Estatuillas falsas recibidas</th><th class="n">Votos recibidos</th></tr></thead><tbody>${rk.map(([c,r],i)=>`<tr><td>${i+1}</td><td><span class="row" style="flex-wrap:nowrap;gap:8px">${av(c)}${nm(c)}</span></td><td>${c.team0>=0?tName(c.team0):'—'}</td><td>${esc(r)}${c.returned?' · volvió en el repechaje':''}${c.teamHist.length>1?' · cambió de equipo':''}</td><td class="n">${c.wins}</td><td class="n">${c.indWins}</td><td class="n">${c.advGot}</td><td class="n">${c.advUsed}</td><td class="n">${c.fakeGot}</td><td class="n">${c.va}</td></tr>`).join('')}</tbody></table></div></section>
+  ${seqCta()}
+  <div class="navbar"><button class="btn go" id="bAgain2">Jugar otra vez con esta configuración</button><button class="btn" id="bNew2">Cambiar configuración</button></div>`;
+}
+async function simAll(){
+  if(!G)return;const myG=G;G.auto=true;
+  if(G.gate){const g=G.gate;G.gate=null;g()}
+  if(G.cur)await G.cur;
+  while(myG===G&&!G.over){await nextEpisode();await wait(0)}
+  if(myG===G){G.auto=false;G.tab='sum';draw()}
+}
+function resetToSetup(){S.carry=null;S.saga=1;G=null;$('#topbtns').hidden=true;$('#tabs').hidden=true;S.step=3;drawSetup();window.scrollTo(0,0)}
+
+/* ================= EVENTOS DE LA INTERFAZ ================= */
+document.addEventListener('click',e=>{
+  if(e.target.closest('#cSum'))S.cform.open=!$('#cDet').open;
+  const t=e.target.closest('button');if(!t)return;
+  const seg=t.closest('[data-seg]');
+  if(seg&&!G){readStep2();S[seg.dataset.seg]=t.dataset.v;if(seg.dataset.seg==='preElim'&&t.dataset.v==='equipo')S.mergeAt=0;drawSetup();return}
+  if(t.dataset.step&&!G){readStep2();const n=+t.dataset.step;if(n>=3&&S.sel.size===0)applySeason(S.season);S.step=n;drawSetup();window.scrollTo(0,0);return}
+  if(!G){
+    if(t.dataset.id&&t.classList.contains('chip')){S.sel.has(t.dataset.id)?S.sel.delete(t.dataset.id):S.sel.add(t.dataset.id);drawSetup()}
+    else if(t.dataset.all){ROSTER.filter(c=>c.o===t.dataset.all).forEach(c=>S.sel.add(c.id));drawSetup()}
+    else if(t.dataset.none){ROSTER.filter(c=>c.o===t.dataset.none).forEach(c=>S.sel.delete(c.id));drawSetup()}
+    else if(t.id==='randNames'){readStep2();S.names=shuffle(TEAM_NAMES).slice(0,S.teams);fillNames();drawSetup()}
+    else if(t.id==='selNone'){S.sel.clear();drawSetup()}
+    else if(t.id==='selSeason'){const k=S.season;S.sel=new Set(k==='libre'?shuffle(ROSTER.filter(c=>c.o!=='custom')).slice(0,18).map(c=>c.id):SEASONS[k].cast);drawSetup()}
+    else if(t.id==='selRand'){const n=clamp(num($('#randN').value,16),4,ROSTER.length);S.sel=new Set(shuffle(ROSTER).slice(0,n).map(c=>c.id));S.mergeAt=S.preElim==='equipo'?0:Math.max(4,Math.round(n*.55));drawSetup()}
+    else if(t.dataset.cfally){const a=S.cform.ally,i=a.indexOf(t.dataset.cfally);i<0?a.push(t.dataset.cfally):a.splice(i,1);S.cform.open=true;drawSetup()}
+    else if(t.id==='cfRelAdd'){const o=ROSTER.find(c=>c.id!==S.cform.id);S.cform.rels.push([[...S.sel].find(id=>id!==S.cform.id)||o.id,'amigos']);S.cform.open=true;drawSetup()}
+    else if(t.dataset.cfreldel!==undefined){S.cform.rels.splice(+t.dataset.cfreldel,1);S.cform.open=true;drawSetup()}
+    else if(t.id==='cSave'){const cf=S.cform;const n=cf.n.trim();if(!n){$('#cErr').textContent='Ponele un nombre.';return}
+      const id=cf.id||'custom'+Date.now();const c={id,n,s:cf.s.slice(),o:'custom',rels:cf.rels.filter(r=>r[0]&&r[0]!==id),ally:cf.ally.filter(x=>x!==id),allyName:cf.allyName.trim()};
+      const i=CUSTOM.findIndex(x=>x.id===id);if(i>=0)CUSTOM[i]=c;else CUSTOM.push(c);const j=ROSTER.findIndex(x=>x.id===id);if(j>=0)ROSTER[j]=c;else ROSTER.push(c);byId[id]=c;store.set('dt_custom',CUSTOM);S.sel.add(id);
+      S.cform={id:null,n:'',s:[5,5,5,5],rels:[],ally:[],allyName:'',open:true};drawSetup()}
+    else if(t.id==='cCancel'){S.cform={id:null,n:'',s:[5,5,5,5],rels:[],ally:[],allyName:'',open:true};drawSetup()}
+    else if(t.dataset.cedit){const c=byId[t.dataset.cedit];S.cform={id:c.id,n:c.n,s:c.s.slice(),rels:(c.rels||[]).map(r=>r.slice()),ally:(c.ally||[]).slice(),allyName:c.allyName||'',open:true};drawSetup()}
+    else if(t.dataset.cdel){const id=t.dataset.cdel;CUSTOM=CUSTOM.filter(c=>c.id!==id);const j=ROSTER.findIndex(c=>c.id===id);if(j>=0)ROSTER.splice(j,1);delete byId[id];S.sel.delete(id);store.set('dt_custom',CUSTOM);if(S.cform.id===id)S.cform={id:null,n:'',s:[5,5,5,5],rels:[],ally:[],allyName:'',open:true};S.cform.open=true;drawSetup()}
+    else if(t.id==='tmSeason'){S.teamMap=seasonMap(S.season);drawSetup()}
+    else if(t.id==='tmClear'){S.teamMap={};drawSetup()}
+    else if(t.id==='tmRand'){S.teamMap={};shuffle([...S.sel]).forEach((id,k)=>S.teamMap[id]=k%S.teams);drawSetup()}
+    else if(t.id==='relAdd'){const ids=[...S.sel];S.rels.push([ids[0],'amigos',ids[1]]);drawSetup()}
+    else if(t.dataset.reldel!==undefined){S.rels.splice(+t.dataset.reldel,1);drawSetup()}
+    else if(t.id==='alAdd'){S.alls.push({name:pick(AL_NAMES),mem:[]});drawSetup()}
+    else if(t.dataset.aldel!==undefined){S.alls.splice(+t.dataset.aldel,1);drawSetup()}
+    else if(t.dataset.almem!==undefined){const a=S.alls[+t.dataset.almem].mem,i=a.indexOf(t.dataset.c);i<0?a.push(t.dataset.c):a.splice(i,1);drawSetup()}
+    else if(t.id==='dropCarry'){S.carry=null;S.saga=1;applySeason(S.season);S.step=1;drawSetup()}
+    else if(t.id==='start'){
+      if($('#player'))S.player=$('#player').value;
+      const n=S.sel.size;let err='';
+      if(n<4)err='Elegí al menos 4 personajes.';
+      else if(S.teams>1&&S.teams*2>n)err=`Con ${S.teams} equipos necesitás al menos ${S.teams*2} personajes (o cambiá la cantidad de equipos en Reglas).`;
+      else if(S.finalSize+1>=n)err='Hay que tener al menos dos personajes más que finalistas.';
+      else if(S.preElim==='equipo'&&S.teams>1&&S.mergeAt===0&&S.teams<=S.finalSize)err='En formato carrera necesitás más equipos que finalistas.';
+      else if(S.mode==='play'&&!S.sel.has(S.player))err='Elegí tu personaje.';
+      if(!err&&S.teams>1){const cnt=Array(S.teams).fill(0);let un=0;[...S.sel].forEach(id=>{const i=S.teamMap[id];if(i!=null&&i>=0&&i<S.teams)cnt[i]++;else un++});
+        const need=cnt.reduce((t,c)=>t+Math.max(0,2-c),0);if(need>un)err='Cada equipo necesita al menos 2 integrantes: revisá el armado de equipos.'}
+      $('#err').textContent=err;if(err)return;
+      startGame({...S,sel:new Set(S.sel),names:S.names.slice(),teamMap:{...S.teamMap},rels:S.rels.map(r=>r.slice()),alls:S.alls.map(a=>({name:a.name,mem:a.mem.slice()}))});
+    }
+    return;
+  }
+  if(t.dataset.tab){if(t.dataset.tab==='sum'&&!G.over)return;G.tab=t.dataset.tab;draw();window.scrollTo({top:0});return}
+  if(t.dataset.opt!==undefined&&G.pending){const p=G.pending;G.pending=null;p.res(p.opts[+t.dataset.opt].v);draw();return}
+  if(t.id==='bCont'&&G.gate){const g=G.gate;G.gate=null;g();return}
+  if(t.id==='bNext'){nextEpisode();return}
+  if(t.id==='bAll'){simAll();return}
+  if(t.dataset.ep!==undefined){G.view={e:+t.dataset.ep,s:0};G.tab='ep';draw();window.scrollTo({top:0});return}
+  if(t.dataset.epend!==undefined){const i=+t.dataset.epend;G.view={e:i,s:G.episodes[i].blocks.length-1};draw();window.scrollTo({top:0});return}
+  if(t.dataset.sec!==undefined){G.view={e:G.view.e,s:+t.dataset.sec};draw();window.scrollTo({top:0});return}
+  if(t.dataset.relsel){G.relSel=t.dataset.relsel;G.tab='rel';draw();window.scrollTo({top:0});return}
+  if(t.id==='bNew'||t.id==='bNew2'){resetToSetup();return}
+  if(t.id==='bAgain'||t.id==='bAgain2'){const cfg=G.cfgRaw;G=null;startGame(cfg);return}
+  if(t.id==='bFull'){G.full=!G.full;draw();return}
+  if(t.id==='bSeq'){G.seq=G.seq||{n:Math.max(4,Math.round(G.cast.length*.65)),q:new Set(),lines:[],done:false};G.tab='seq';draw();window.scrollTo({top:0});return}
+  if(t.id==='seqSim'){G.seq.n=num($('#seqN').value,G.seq.n);seqSimulate();draw();return}
+  if(t.id==='seqHand'){G.seq.q=new Set(finalRanking().slice(0,clamp(num($('#seqN').value,G.seq.n),4,G.cast.length)).map(x=>x[0].id));G.seq.lines=[];G.seq.done=true;draw();return}
+  if(t.dataset.seqc){const q=G.seq.q;q.has(t.dataset.seqc)?q.delete(t.dataset.seqc):q.add(t.dataset.seqc);draw();return}
+  if(t.id==='seqGo'){seqGo();return}
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(!G){
+    if(el.id==='season'){applySeason(el.value,!!S.carry);drawSetup()}
+    else if(el.dataset.tm){const v=+el.value;if(v<0)delete S.teamMap[el.dataset.tm];else S.teamMap[el.dataset.tm]=v;drawSetup()}
+    else if(el.dataset.rel!==undefined)S.rels[+el.dataset.rel][+el.dataset.k]=el.value;
+    else if(el.dataset.cfrel!==undefined)S.cform.rels[+el.dataset.cfrel][+el.dataset.k]=el.value;
+    else if(el.id==='teams'){readStep2();drawSetup()}
+    else if(el.id==='player')S.player=el.value;
+    else if(['mergeAt','retN','extraRet','extraN','finalSize'].includes(el.id))readStep2();
+    return;
+  }
+  if(el.id==='relSel'){G.relSel=el.value;draw()}
+});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(!G&&el.dataset.tn!==undefined)S.names[+el.dataset.tn]=el.value;
+  if(!G&&el.dataset.alname!==undefined)S.alls[+el.dataset.alname].name=el.value;
+  if(!G&&el.dataset.cf){const k=el.dataset.cf;if(k[0]==='s'&&k.length===2)S.cform.s[+k[1]]=clamp(num(el.value,5),1,10);else S.cform[k]=el.value}
+  if(G&&el.id==='seqN')G.seq.n=num(el.value,G.seq.n);
+  if(G&&el.id==='alEp'){G.alEp=+el.value;draw();const r=$('#alEp');if(r)r.focus()}
+});
+applySeason('isla');drawSetup();
+}
+</script>
+</body>
+</html>
